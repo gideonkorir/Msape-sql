@@ -5,8 +5,8 @@ namespace Msape.BookKeeping.InternalContracts
 {
     public record AccountId
     {
-        public Guid Id { get; init; }
-        public string PartitionKey { get; init; }
+        public long Id { get; init; }
+        public long SubjectId { get; init; }
         public string Name { get; init; }
         public string AccountNumber { get; init; }
         public AccountType AccountType { get; init; }

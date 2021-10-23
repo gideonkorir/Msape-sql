@@ -6,7 +6,9 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
 {
     public record TransactionChargeCompleted
     {
-        public DocumentRef<Guid> Transaction { get; init; }
+        public Guid PostingId { get; init; }
+        public long TransactionId { get; init; }
+        public long ChargeId { get; init; }
         public TransactionType TransactionType { get; init; }
         public bool IsContra { get; init; }
         public MoneyInfo Amount { get; init; }

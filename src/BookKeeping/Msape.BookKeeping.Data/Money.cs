@@ -2,7 +2,7 @@
 
 namespace Msape.BookKeeping.Data
 {
-    public struct Money : IEquatable<Money>
+    public sealed record Money : IEquatable<Money>
     {
         public int Currency { get; private set; }
         public decimal Value { get; private set; }
@@ -34,13 +34,6 @@ namespace Msape.BookKeeping.Data
         public bool Equals(Money other)
             => Currency == other.Currency && Value == other.Value;
 
-        public override bool Equals(object obj)
-        {
-            if (obj is not null && obj is Money money)
-                return Equals(money);
-            return false;
-        }
-
         public override int GetHashCode()
             => HashCode.Combine(Currency, Value);
 
@@ -59,16 +52,6 @@ namespace Msape.BookKeeping.Data
 
         public static Money Zero(Money source)
             => new(source.Currency, 0);
-
-        public static bool operator ==(Money left, Money right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Money left, Money right)
-        {
-            return !(left == right);
-        }
 
         public static Money operator +(Money left, Money right)
             => left.Add(right);

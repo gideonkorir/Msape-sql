@@ -2,16 +2,18 @@
 {
     public enum TransactionStatus
     {
+        Pending,
         Initiated,
         Succeeded,
+        Cancelled,
         Failed
     }
 
     public enum TransactionFailReason
     {
         None,
-        FailedToInitiate,
-        FailedToReceive,
+        FailedToPostToSource,
+        FailedToPostToDest,
         ParentTransactionFailed
     }
 }

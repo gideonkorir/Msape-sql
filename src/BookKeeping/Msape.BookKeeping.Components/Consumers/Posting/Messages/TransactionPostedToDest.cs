@@ -5,8 +5,9 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
 {
     public record TransactionPostedToDest
     {
-        public DocumentRef<Guid> Transaction { get; init; }
-        public DocumentRef<Guid> Account { get; init; }
+        public Guid PostingId { get; init; }
+        public long TransactionId { get; init; }
+        public long AccountId { get; init; }
         public MoneyInfo BalanceAfter { get; init; }
         public DateTime Timestamp { get; init; }
     }

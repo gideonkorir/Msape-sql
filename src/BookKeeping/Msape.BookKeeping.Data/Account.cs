@@ -4,36 +4,27 @@ namespace Msape.BookKeeping.Data
 {
     public class Account
     {
-        public Guid Id { get; protected set; }
-        public string PartitionKey { get; protected set; }
-        public string AccountNumber { get; protected set; }
+        public long Id { get; protected set; }
+        public int PartyId { get; protected set; }
         public AccountClass AccountClass { get; protected set; }
         public AccountType AccountType { get; protected set; }
         public AccountStatus AccountStatus { get; protected set; }
         public decimal MinBalance { get; protected set; }
         public decimal MaxBalance { get; protected set; }
         public Money Balance { get; protected set; }
+        //https://docs.microsoft.com/en-us/sql/t-sql/data-types/rowversion-transact-sql?view=sql-server-ver15
+        public ulong RowVersion { get; protected set; }
+        public ulong Version { get; protected set; }
 
         protected Account()
         {
             //For serialization
         }
 
-        public Account(Guid id, string partitionKey, string accountNumber, AccountClass accountClass, AccountType accountType, Money balance, decimal minBalance = 0, decimal maxBalance = decimal.MaxValue)
+        public Account(long id, int partyId, AccountClass accountClass, AccountType accountType, Money balance, decimal minBalance = 0, decimal maxBalance = decimal.MaxValue)
         {
-            if (string.IsNullOrWhiteSpace(partitionKey))
-            {
-                throw new ArgumentException($"'{nameof(partitionKey)}' cannot be null or whitespace.", nameof(partitionKey));
-            }
-
-            if (string.IsNullOrWhiteSpace(accountNumber))
-            {
-                throw new ArgumentException($"'{nameof(accountNumber)}' cannot be null or whitespace.", nameof(accountNumber));
-            }
-
             Id = id;
-            PartitionKey = partitionKey;
-            AccountNumber = accountNumber;
+            PartyId = partyId;
             AccountClass = accountClass;
             AccountType = accountType;
             AccountStatus = AccountStatus.Active;
@@ -66,39 +57,41 @@ namespace Msape.BookKeeping.Data
             };
         }
 
-        public Entry Debit(DebitOrCreditInfo debitOrCreditInfo)
+        public Entry Debit(long transactionId, Money amount)
         {
-            var (canDebit, failReason) = CanDebit(debitOrCreditInfo.Amount);
+            var (canDebit, failReason) = CanDebit(amount);
             if(!canDebit)
             {
                 throw new InvalidOperationException($"Can not debit, CanDebit returned failse with reason: {failReason}");
             }
-            var entry = CreateEntry(debitOrCreditInfo, EntryType.Debit);
+            var entry = CreateEntry(transactionId, amount, EntryType.Debit);
             return entry;
         }
 
-        public Entry Credit(DebitOrCreditInfo debitOrCreditInfo)
+        public Entry Credit(long transactionId, Money amount)
         {
-            var (canCredit, failReason) = CanCredit(debitOrCreditInfo.Amount);
+            var (canCredit, failReason) = CanCredit(amount);
             if (!canCredit)
             {
                 throw new InvalidOperationException($"Can not credit, CanCredit returned false with reason: {failReason}");
             }
-            var entry = CreateEntry(debitOrCreditInfo, EntryType.Credit);
+            var entry = CreateEntry(transactionId, amount, EntryType.Credit);
             return entry;
         }
 
-        Entry CreateEntry(DebitOrCreditInfo debitOrCreditInfo, EntryType entryType)
+        Entry CreateEntry(long transactionId, Money amount, EntryType entryType)
         {
+            bool isPlus = true;
             if(entryType == EntryType.Debit)
             {
                 switch(AccountClass)
                 {
                     case AccountClass.Asset:
-                        Balance += debitOrCreditInfo.Amount;
+                        Balance += amount;
                         break;
                     default:
-                        Balance -= debitOrCreditInfo.Amount;
+                        Balance -= amount;
+                        isPlus = false;
                         break;
                 }
             }
@@ -107,23 +100,24 @@ namespace Msape.BookKeeping.Data
                 switch(AccountClass)
                 {
                     case AccountClass.Asset:
-                        Balance -= debitOrCreditInfo.Amount;
+                        Balance -= amount;
+                        isPlus = false;
                         break;
                     default:
-                        Balance += debitOrCreditInfo.Amount;
+                        Balance += amount;
                         break;
                 }
             }
-            return new Entry(
-                Id: Entry.CreateId(debitOrCreditInfo.MovementInfo.Id, entryType),
-                PartitionKey: PartitionKey,
-                AccountId: Id,
-                Amount: debitOrCreditInfo.Amount,
-                EntryType: entryType,
-                BalanceAfter: Balance,
-                PostedDate: DateTime.UtcNow,
-                TransactionInfo: debitOrCreditInfo.MovementInfo
-                );
+            Version += 1;
+            return new Entry
+            {
+                TransactionId = transactionId,
+                AccountId = Id,
+                EntryType = entryType,
+                BalanceAfter = Balance with { }, //clone to fix ef issue: The same entity is being tracked as different weak entity types
+                PostedDate = DateTime.UtcNow,
+                IsPlus = isPlus
+            };
         }
 
         private void CheckCurrency(Money other)
@@ -133,9 +127,5 @@ namespace Msape.BookKeeping.Data
         }
     }
 
-    public record DebitOrCreditInfo
-    {
-        public Money Amount { get; init; }
-        public EntryTransactionInfo MovementInfo { get; init; }
-    }
+    public record DebitOrCreditInfo(long TransactionId, Money Amount);
 }

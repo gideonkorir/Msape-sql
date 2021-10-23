@@ -6,13 +6,12 @@
         /// Should never be used in code
         /// </summary>
         Unknown = 0,
-        AgentFloatTopup = 1,
-        CustomerTopup = 2,
-        CustomerSendMoney = 3,
-        SendMoneyCharge = 4,
+        TransactionCharge = 1,
+        AgentFloatTopup = 2,
+        CustomerTopup = 3,
+        CustomerSendMoney = 4,
         CustomerWithdrawal = 5,
-        CustomerWithdrawalCharge = 6,
-        PaymentToTill = 7,
-        BillPayment = 8
+        PaymentToTill = 6,
+        BillPayment = 7
     }
 }

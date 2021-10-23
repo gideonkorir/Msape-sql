@@ -3,7 +3,7 @@ using System;
 
 namespace Msape.BookKeeping.Api.Models
 {
-    public record TransactionApiModel(Guid Id, DateTime Timestamp, string TransactionType, Money Amount)
+    public record TransactionApiModel(long Id, DateTime Timestamp, string TransactionType, Money Amount)
     {
         public static TransactionApiModel Create(Transaction transaction)
             => new(transaction.Id, transaction.Timestamp, transaction.TransactionType.ToString(), transaction.Amount);

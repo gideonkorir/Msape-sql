@@ -8,7 +8,8 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
     [ConfigureConsumeTopology(false)]
     public record ReversePostTransactionToSource
     {
-        public DocumentRef<Guid> Transaction { get; init; }
+        public Guid PostingId { get; init; }
+        public long TransactionId { get; init; }
         public TransactionType TransactionType { get; init; }
         public DateTime Timestamp { get; init; }
         public bool IsContra { get; init; }

@@ -17,7 +17,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
         {
             _mock = new Mock<ICosmosAccount>();
             _harness = new InMemoryTestHarness();
-            _harness.Consumer(() => new PostTransactionToSourceConsumer(_mock.Object));
+            //_harness.Consumer(() => new PostTransactionToSourceConsumer(_mock.Object));
         }
 
         public void ConfigureMock(Action<Mock<ICosmosAccount>> configure)
