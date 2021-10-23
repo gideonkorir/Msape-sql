@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Msape.BookKeeping.Data\Msape.BookKeeping.Data.csproj" />
+    <ProjectReference Include="..\Msape.BookKeeping.InternalContracts\Msape.BookKeeping.InternalContracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit" Version="7.2.1" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="7.2.1" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.20.1" />
+  </ItemGroup>
+
+</Project>
