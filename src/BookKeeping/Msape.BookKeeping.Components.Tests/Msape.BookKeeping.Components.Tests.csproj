@@ -26,4 +26,8 @@
     <ProjectReference Include="..\Msape.BookKeeping.Components\Msape.BookKeeping.Components.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Posting\" />
+  </ItemGroup>
+
 </Project>
