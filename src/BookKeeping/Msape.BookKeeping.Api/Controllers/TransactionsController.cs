@@ -1,15 +1,10 @@
-﻿using MassTransit;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Cosmos;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using Msape.BookKeeping.Api.Infra;
 using Msape.BookKeeping.Api.Models;
 using Msape.BookKeeping.Data;
 using Msape.BookKeeping.Data.EF;
 using Msape.BookKeeping.InternalContracts;
 using System;
-using System.Globalization;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Msape.BookKeeping.Api.Controllers

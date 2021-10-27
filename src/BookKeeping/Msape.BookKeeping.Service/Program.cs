@@ -8,7 +8,6 @@ using Microsoft.Extensions.Hosting;
 using Msape.BookKeeping.Components.Consumers;
 using Msape.BookKeeping.Components.Consumers.Posting;
 using Msape.BookKeeping.Components.Consumers.Posting.Saga;
-using Msape.BookKeeping.Components.Infra;
 using Msape.BookKeeping.Data;
 using Msape.BookKeeping.Data.EF;
 using System;
@@ -51,7 +50,7 @@ namespace Msape.BookKeeping.Service
                     services.AddMassTransit(configurator =>
                     {
                         configurator.SetKebabCaseEndpointNameFormatter();
-                        configurator.AddConsumersFromNamespaceContaining<Components.StringUtil>();
+                        configurator.AddConsumersFromNamespaceContaining<PostTransactionToSourceConsumer>();
                         configurator.AddSagaStateMachine<PostTransactionStateMachine, PostTransactionSaga>()
                             .CosmosRepository(config =>
                             {

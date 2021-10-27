@@ -1,11 +1,9 @@
 ﻿using MassTransit;
-using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Msape.BookKeeping.Data;
 using Msape.BookKeeping.Data.EF;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Msape.BookKeeping.Components.Consumers.Posting
