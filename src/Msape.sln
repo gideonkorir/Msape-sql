@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Msape.BookKeeping.Api", "Bo
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BookKeeping", "BookKeeping", "{774487EB-F104-4C85-8155-C2944E044CCE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Msape.BookKeeping.Data.EF", "BookKeeping\Msape.BookKeeping.Data.EF\Msape.BookKeeping.Data.EF.csproj", "{60687B40-BEFF-4FC8-B3A7-6EF8E0E34EF3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{CA89512F-01FB-485F-8D20-391B70C74C79}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA89512F-01FB-485F-8D20-391B70C74C79}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA89512F-01FB-485F-8D20-391B70C74C79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60687B40-BEFF-4FC8-B3A7-6EF8E0E34EF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60687B40-BEFF-4FC8-B3A7-6EF8E0E34EF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60687B40-BEFF-4FC8-B3A7-6EF8E0E34EF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60687B40-BEFF-4FC8-B3A7-6EF8E0E34EF3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -58,6 +64,7 @@ Global
 		{4A2F4513-FA48-498F-A488-9FAC53A52233} = {774487EB-F104-4C85-8155-C2944E044CCE}
 		{CA684372-E634-4B4F-8AD8-04E2D22D0B76} = {774487EB-F104-4C85-8155-C2944E044CCE}
 		{CA89512F-01FB-485F-8D20-391B70C74C79} = {774487EB-F104-4C85-8155-C2944E044CCE}
+		{60687B40-BEFF-4FC8-B3A7-6EF8E0E34EF3} = {774487EB-F104-4C85-8155-C2944E044CCE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BFC10DE5-0818-4848-82FE-A078E2D214A4}

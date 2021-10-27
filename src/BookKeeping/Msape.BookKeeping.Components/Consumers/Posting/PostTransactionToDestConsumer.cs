@@ -1,109 +1,70 @@
 ﻿using MassTransit;
-using Microsoft.Azure.Cosmos;
-using Msape.BookKeeping.Components.Infra;
+using Microsoft.EntityFrameworkCore;
 using Msape.BookKeeping.Data;
+using Msape.BookKeeping.Data.EF;
 using System;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Msape.BookKeeping.Components.Consumers.Posting
 {
     public class PostTransactionToDestConsumer : IConsumer<PostTransactionToDest>
     {
-        private readonly ICosmosAccount _cosmosAccount;
+        private readonly BookKeepingContext _bookeepingContext;
 
-        public PostTransactionToDestConsumer(ICosmosAccount cosmosAccount)
+        public PostTransactionToDestConsumer(BookKeepingContext bookeepingContext)
         {
-            _cosmosAccount = cosmosAccount ?? throw new System.ArgumentNullException(nameof(cosmosAccount));
+            _bookeepingContext = bookeepingContext ?? throw new ArgumentNullException(nameof(bookeepingContext));
         }
 
         public async Task Consume(ConsumeContext<PostTransactionToDest> context)
         {
-            //if we have credited the account then ignore
-            var entry = await GetEntryAsync(context.Message.Transaction.Id, context.Message.DestAccount.PartitionKey, context.CancellationToken)
+            var transaction = await _bookeepingContext.Transactions
+                .Where(c => c.Id == context.Message.TransactionId)
+                .SingleAsync(context.CancellationToken)
                 .ConfigureAwait(false);
-            if(entry != null)
+            if(transaction.Status == TransactionStatus.Succeeded)
             {
-                //publish the transaction credited
-                await RespondPosted(context, entry).ConfigureAwait(false);
+                await RespondPosted(context, transaction).ConfigureAwait(false);
             }
             else
             {
-                var account = await _cosmosAccount.Accounts.ReadItemAsync<Account>(
-                    id: CosmosId.FromGuid(context.Message.DestAccount.Id),
-                    partitionKey: new PartitionKey(context.Message.DestAccount.PartitionKey),
-                    requestOptions: null,
-                    cancellationToken: context.CancellationToken
-                    )
+                var account = await _bookeepingContext.Accounts
+                    .FindAsync(new object[] { context.Message.DestAccountId }, context.CancellationToken)
                     .ConfigureAwait(false);
-                var (canReceive, failReason) = account.Resource.CanReceive(context.Message.Amount.ToMoney(), context.Message.IsContra);
-                if(!canReceive)
+                if(transaction.Status == TransactionStatus.Initiated)
                 {
-                    await RespondPostFailed(context, account.Resource, failReason).ConfigureAwait(false);
+                    var failReason = transaction.PostToDestination(account);
+                    await _bookeepingContext.SaveChangesAsync(context.CancellationToken)
+                        .ConfigureAwait(false);
+                    var task = transaction.Status == TransactionStatus.Succeeded
+                        ? RespondPosted(context, transaction)
+                        : RespondPostFailed(context, account, failReason.Value);
+                    await task.ConfigureAwait(false);
                 }
-                else
+                else if(transaction.Status == TransactionStatus.Failed
+                    && transaction.DestFailReason.HasValue)
                 {
-                    var creditResult = account.Resource.Receive(new DebitOrCreditInfo()
-                    {
-                        Amount = context.Message.Amount.ToMoney(),
-                        MovementInfo = new EntryTransactionInfo(
-                            Id: context.Message.Transaction.Id,
-                            PartitionKey: context.Message.Transaction.PartitionKey,
-                            Timestamp: context.Message.Timestamp,
-                            TransactionType: context.Message.TransactionType
-                            )
-                    }, 
-                    context.Message.IsContra);
-                    var batch = _cosmosAccount.Accounts.CreateTransactionalBatch(new PartitionKey(context.Message.DestAccount.PartitionKey));
-                    batch
-                        .ReplaceItem(CosmosId.FromGuid(account.Resource.Id), account.Resource, new TransactionalBatchItemRequestOptions()
-                        {
-                            IfMatchEtag = account.ETag,
-                            EnableContentResponseOnWrite = false
-                        })
-                        .CreateItem(creditResult, new TransactionalBatchItemRequestOptions()
-                        {
-                            EnableContentResponseOnWrite = false
-                        });
-                    var response = await batch.ExecuteAsync(context.CancellationToken).ConfigureAwait(false);
-                    response.ThrowIfNotSuccessful();
-                    await RespondPosted(context, creditResult).ConfigureAwait(false);
+                    await RespondPostFailed(context, account, transaction.DestFailReason.Value)
+                        .ConfigureAwait(false);
                 }
             }
         }
 
-        private async Task<Entry> GetEntryAsync(Guid transactionId, string partKey, CancellationToken cancellationToken)
+        private static async Task RespondPosted(ConsumeContext<PostTransactionToDest> context, Transaction transaction)
         {
-            var id = Entry.CreateId(transactionId, EntryType.Credit);
-            try
-            {
-                var response = await _cosmosAccount.Accounts.ReadItemAsync<Entry>(
-                    id: id,
-                    partitionKey: new PartitionKey(partKey),
-                    requestOptions: null,
-                    cancellationToken: cancellationToken
-                    )
-                    .ConfigureAwait(false);
-                return response.Resource;
-            }
-            catch(CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-        }
-
-        private static async Task RespondPosted(ConsumeContext<PostTransactionToDest> context, Entry entry)
-        {
+            var entry = transaction.GetDestEntry();
             await context.RespondAsync(new TransactionPostedToDest()
             {
-                Account = context.Message.DestAccount,
+                PostingId = context.Message.PostingId,
+                AccountId = context.Message.DestAccountId,
                 BalanceAfter = new MoneyInfo
                 {
                     Value = entry.BalanceAfter.Value,
                     Currency = entry.BalanceAfter.Currency
                 },
                 Timestamp = entry.PostedDate,
-                Transaction = context.Message.Transaction
+                TransactionId = context.Message.TransactionId
             }).ConfigureAwait(false);
         }
 
@@ -111,7 +72,8 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
         {
             await context.RespondAsync(new PostTransactionToDestFailed()
             {
-                Account = context.Message.DestAccount,
+                PostingId = context.Message.PostingId,
+                AccountId = context.Message.DestAccountId,
                 AccountBalance = new MoneyInfo
                 {
                     Value = account.Balance.Value,
@@ -119,7 +81,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
                 },
                 FailReason = failReason,
                 Timestamp = DateTime.UtcNow,
-                Transaction = context.Message.Transaction
+                TransactionId = context.Message.TransactionId
             }).ConfigureAwait(false);
         }
     }

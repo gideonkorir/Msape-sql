@@ -1,6 +1,6 @@
 ﻿namespace Msape.BookKeeping.Data
 {
-    public enum AccountClass
+    public enum AccountClass : byte
     {
         Asset,
         Equity,

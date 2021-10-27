@@ -1,12 +1,15 @@
 ﻿using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
+using Microsoft.EntityFrameworkCore;
 using Msape.BookKeeping.Api.Infra;
 using Msape.BookKeeping.Api.Models;
 using Msape.BookKeeping.Data;
+using Msape.BookKeeping.Data.EF;
 using Msape.BookKeeping.InternalContracts;
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Msape.BookKeeping.Api.Controllers
@@ -15,82 +18,49 @@ namespace Msape.BookKeeping.Api.Controllers
     [ApiController]
     public partial class TransactionsController : ControllerBase
     {
-        private readonly ICosmosAccount _cosmosAccount;
+        private static readonly string SystemAcc = "SYSTEM";
 
-        public TransactionsController(ICosmosAccount cosmosAccount)
+        private readonly BookKeepingContext _bookKeepingContext;
+        private readonly ISubjectCache _subjectCache;
+
+        public TransactionsController(BookKeepingContext bookKeepingContext, ISubjectCache subjectCache)
         {
-            _cosmosAccount = cosmosAccount ?? throw new ArgumentNullException(nameof(cosmosAccount));
+            _bookKeepingContext = bookKeepingContext ?? throw new ArgumentNullException(nameof(bookKeepingContext));
+            _subjectCache = subjectCache ?? throw new ArgumentNullException(nameof(subjectCache));
         }
 
-        [HttpGet("{id:Guid}")]
-        public async Task<IActionResult> Get([FromRoute] string id)
+        [HttpGet("{id:long}")]
+        public async Task<IActionResult> Get([FromRoute] long id)
         {
-            try
-            {
-                var response = await _cosmosAccount.Transactions.ReadItemAsync<Transaction>(
-                    id: id,
-                    partitionKey: new PartitionKey(id),
-                    requestOptions: new ItemRequestOptions()
-                    {
+            var response = await _bookKeepingContext.Transactions
+                    .FindAsync(new object[] { id }, HttpContext.RequestAborted)
+                    .ConfigureAwait(false);
 
-                    },
-                    cancellationToken: HttpContext.RequestAborted
-                    ).ConfigureAwait(false);
-                return Ok(TransactionApiModel.Create(response.Resource));
-            }
-            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return NotFound(new
+            return response != null
+                ? Ok(TransactionApiModel.Create(response))
+                : NotFound(new
                 {
                     ErrorMessage = $"Transaction with id {id} was not found"
                 });
-            }
         }
 
         [HttpPut("agentfloattopup")]
         public async Task<IActionResult> AgentFloatTopup(AgentFloatTopupApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
-            var subject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "AGENT_FLOAT",
-                accountNumber: model.AgentNumber,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
-
-            var systemSubject = await SystemAccountNumberHelper.GetAgentFloatDebitAccount(
-                container: _cosmosAccount.AccountNumbers,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
+            var agentSubject = await GetSubjectAsync(model.AgentNumber, AccountType.AgentFloat).ConfigureAwait(false);
+            var systemSubject = await GetSubjectAsync(SystemAcc, AccountType.SystemAgentFloat).ConfigureAwait(false);
             //send message to queue
-            var id = NewId.NextGuid();
+            var id = await NextTxIdAsync().ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
-                Id = id,
+                PostingId = ToGuid(id),
+                TransactionId = id,
                 TransactionType = TransactionType.AgentFloatTopup,
                 Timestamp = DateTime.UtcNow,
-                CreditAccountId = new AccountId()
-                {
-                    Id = subject.Account.Id,
-                    PartitionKey = subject.Account.PartitionKey,
-                    Name = subject.Name,
-                    AccountNumber = subject.AccountNumber,
-                    AccountType = subject.AccountType
-                },
-                DebitAccountId = new AccountId()
-                {
-                    Id = systemSubject.Account.Id,
-                    PartitionKey = systemSubject.Account.PartitionKey,
-                    Name = systemSubject.Name,
-                    AccountNumber = systemSubject.AccountNumber,
-                    AccountType = systemSubject.AccountType
-                },
+                DestAccount = agentSubject.ToAccountId(),
+                SourceAccount = systemSubject.ToAccountId(),
                 Currency = 0
             },
             HttpContext.RequestAborted
@@ -102,50 +72,21 @@ namespace Msape.BookKeeping.Api.Controllers
         [HttpPut("customertopup")]
         public async Task<IActionResult> CustomerTopup(CustomerTopupApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
-            var agentSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "AGENT_FLOAT",
-                accountNumber: model.AgentNumber,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
-            var customerSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "CUSTOMER_ACCOUNT",
-                accountNumber: model.CustomerNumber,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
+            var agentSubject = await GetSubjectAsync(model.AgentNumber, AccountType.AgentFloat).ConfigureAwait(false);
+            var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
 
             //send message to queue
-            var id = NewId.NextGuid();
+            var id = await NextTxIdAsync().ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
-                Id = id,
+                PostingId = ToGuid(id),
+                TransactionId = id,
                 Timestamp = DateTime.UtcNow,
                 TransactionType = TransactionType.CustomerTopup,
-                CreditAccountId = new AccountId()
-                {
-                    Id = customerSubject.Account.Id,
-                    PartitionKey = customerSubject.Account.PartitionKey,
-                    Name = customerSubject.Name,
-                    AccountNumber = customerSubject.AccountNumber,
-                    AccountType = customerSubject.AccountType
-                },
-                DebitAccountId = new AccountId()
-                {
-                    Id = agentSubject.Account.Id,
-                    PartitionKey = agentSubject.Account.PartitionKey,
-                    Name = agentSubject.Name,
-                    AccountNumber = agentSubject.AccountNumber,
-                    AccountType = agentSubject.AccountType
-                },
+                DestAccount = customerSubject.ToAccountId(),
+                SourceAccount = agentSubject.ToAccountId(),
                 Currency = 0
             },
             HttpContext.RequestAborted
@@ -157,71 +98,31 @@ namespace Msape.BookKeeping.Api.Controllers
         [HttpPut("customersendmoney")]
         public async Task<IActionResult> CustomerSendMoney(CustomerSendMoneyApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
-            var fromSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "CUSTOMER_ACCOUNT",
-                accountNumber: model.FromMsisdn,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
-            var toSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "CUSTOMER_ACCOUNT",
-                accountNumber: model.ToMsisdn,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
-            var chargeSubject = await SystemAccountNumberHelper.GetCustomerSendMoneyChargeCreditAccount(
-                container: _cosmosAccount.AccountNumbers,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
+            var fromSubject = await GetSubjectAsync(model.FromMsisdn, AccountType.CustomerAccount);
+            var toSubject = await GetSubjectAsync(model.ToMsisdn, AccountType.CustomerAccount);
+            var chargeSubject = await GetSubjectAsync(SystemAcc, AccountType.SendMoneyCharge);
 
             //send message to queue
-            var id = NewId.NextGuid();
+            var id = await NextTxIdAsync().ConfigureAwait(false);
+            var chargeId = await NextTxIdAsync().ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
-                Id = id,
+                PostingId = ToGuid(id),
+                TransactionId = id,
                 TransactionType = TransactionType.CustomerSendMoney,
                 Timestamp = DateTime.UtcNow,
-                CreditAccountId = new AccountId()
-                {
-                    Id = toSubject.Account.Id,
-                    PartitionKey = toSubject.Account.PartitionKey,
-                    Name = toSubject.Name,
-                    AccountNumber = toSubject.AccountNumber,
-                    AccountType = toSubject.AccountType
-                },
-                DebitAccountId = new AccountId()
-                {
-                    Id = fromSubject.Account.Id,
-                    PartitionKey = fromSubject.Account.PartitionKey,
-                    Name = fromSubject.Name,
-                    AccountNumber = fromSubject.AccountNumber,
-                    AccountType = fromSubject.AccountType
-                },
+                DestAccount = toSubject.ToAccountId(),
+                SourceAccount = fromSubject.ToAccountId(),
                 Currency = 0,
                 Charge = new Charge()
                 {
-                    Id = NewId.NextGuid(),
+                    Id = chargeId,
                     Amount = 30,
                     Currency = 0,
-                    TransactionType = TransactionType.SendMoneyCharge,
-                    PayToAccount = new AccountId()
-                    {
-                        AccountNumber = chargeSubject.AccountNumber,
-                        AccountType = chargeSubject.AccountType,
-                        PartitionKey = chargeSubject.Account.PartitionKey,
-                        Id = chargeSubject.Account.Id,
-                        Name = chargeSubject.Name
-                    }
+                    TransactionType = TransactionType.TransactionCharge,
+                    PayToAccount = chargeSubject.ToAccountId()
                 }
             },
             HttpContext.RequestAborted
@@ -233,70 +134,30 @@ namespace Msape.BookKeeping.Api.Controllers
         [HttpPut("customerwithdrawal")]
         public async Task<IActionResult> CustomerWithdrawal(CustomerWithdrawalApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
-            var agentSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "AGENT_FLOAT",
-                accountNumber: model.AgentNumber,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
-            var customerSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "CUSTOMER_ACCOUNT",
-                accountNumber: model.CustomerNumber,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
-            var chargeSubject = await SystemAccountNumberHelper.GetCustomerWithdrawalChargeCreditAccount(
-                container: _cosmosAccount.AccountNumbers,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
+            var agentSubject = await GetSubjectAsync(model.AgentNumber, AccountType.AgentFloat).ConfigureAwait(false);
+            var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
+            var chargeSubject = await GetSubjectAsync(SystemAcc, AccountType.CustomerWithdrawalCharge).ConfigureAwait(false);
 
             //send message to queue
-            var id = NewId.NextGuid();
+            var id = await NextTxIdAsync().ConfigureAwait(false);
+            var chargeId = await NextTxIdAsync().ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
-                Id = id,
+                PostingId = ToGuid(id),
+                TransactionId = id,
                 Timestamp = DateTime.UtcNow,
                 TransactionType = TransactionType.CustomerWithdrawal,
-                CreditAccountId = new AccountId()
-                {
-                    Id = agentSubject.Account.Id,
-                    PartitionKey = agentSubject.Account.PartitionKey,
-                    Name = agentSubject.Name,
-                    AccountNumber = agentSubject.AccountNumber,
-                    AccountType = agentSubject.AccountType
-                },
-                DebitAccountId = new AccountId()
-                {
-                    Id = customerSubject.Account.Id,
-                    PartitionKey = customerSubject.Account.PartitionKey,
-                    Name = customerSubject.Name,
-                    AccountNumber = customerSubject.AccountNumber,
-                    AccountType = customerSubject.AccountType
-                },
+                DestAccount = agentSubject.ToAccountId(),
+                SourceAccount = customerSubject.ToAccountId(),
                 Charge = new Charge()
                 {
-                    Id = NewId.NextGuid(),
+                    Id = chargeId,
                     Amount = Math.Ceiling(model.Amount * 0.01M),
                     Currency = 0,
-                    TransactionType = TransactionType.CustomerWithdrawalCharge,
-                    PayToAccount = new AccountId()
-                    {
-                        AccountNumber = chargeSubject.AccountNumber,
-                        AccountType = chargeSubject.AccountType,
-                        PartitionKey = chargeSubject.Account.PartitionKey,
-                        Id = chargeSubject.Account.Id,
-                        Name = chargeSubject.Name
-                    }
+                    TransactionType = TransactionType.TransactionCharge,
+                    PayToAccount = chargeSubject.ToAccountId()
                 },
                 Currency = 0
             },
@@ -307,52 +168,23 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("paybill")]
-        public async Task<IActionResult> Pay2Till(PayBillApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> PayToMoneyCollectionAccount(PayBillApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
-            var tillSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "PAYBILL_NUMBER",
-                accountNumber: model.PayBillNumber,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
-            var customerSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "CUSTOMER_ACCOUNT",
-                accountNumber: model.CustomerNumber,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
+            var billSubject = await GetSubjectAsync(model.PayBillNumber, AccountType.CashCollectionAccount).ConfigureAwait(false);
+            var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
 
             //send message to queue
-            var id = NewId.NextGuid();
+            var id = await NextTxIdAsync().ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount.Value,
-                Id = id,
+                PostingId = ToGuid(id),
+                TransactionId = id,
                 Timestamp = DateTime.UtcNow,
                 TransactionType = TransactionType.BillPayment,
-                CreditAccountId = new AccountId()
-                {
-                    Id = tillSubject.Account.Id,
-                    PartitionKey = tillSubject.Account.PartitionKey,
-                    Name = tillSubject.Name,
-                    AccountNumber = tillSubject.AccountNumber,
-                    AccountType = tillSubject.AccountType
-                },
-                DebitAccountId = new AccountId()
-                {
-                    Id = customerSubject.Account.Id,
-                    PartitionKey = customerSubject.Account.PartitionKey,
-                    Name = customerSubject.Name,
-                    AccountNumber = customerSubject.AccountNumber,
-                    AccountType = customerSubject.AccountType
-                },
+                DestAccount = billSubject.ToAccountId(),
+                SourceAccount = customerSubject.ToAccountId(),
                 ExternalReference = model.AccountNumber,
                 Charge = null,
                 Currency = 0
@@ -366,50 +198,21 @@ namespace Msape.BookKeeping.Api.Controllers
         [HttpPut("pay2till")]
         public async Task<IActionResult> Pay2Till(TillPaymentApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
-            var tillSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "TILL_NUMBER",
-                accountNumber: model.TillNumber,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
-            var customerSubject = await AccountNumberQueryHelper.GetSubject(
-                container: _cosmosAccount.AccountNumbers,
-                linkedAccountKey: "CUSTOMER_ACCOUNT",
-                accountNumber: model.CustomerNumber,
-                partitionKeyIsReversedAccountNumber: true,
-                requestOptions: null,
-                cancellationToken: HttpContext.RequestAborted
-                )
-                .ConfigureAwait(false);
+            var tillSubject = await GetSubjectAsync(model.TillNumber, AccountType.TillAccount).ConfigureAwait(false);
+            var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
 
             //send message to queue
-            var id = NewId.NextGuid();
+            var id = await NextTxIdAsync().ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
-                Id = id,
+                PostingId = ToGuid(id),
+                TransactionId = id,
                 Timestamp = DateTime.UtcNow,
                 TransactionType = TransactionType.PaymentToTill,
-                CreditAccountId = new AccountId()
-                {
-                    Id = tillSubject.Account.Id,
-                    PartitionKey = tillSubject.Account.PartitionKey,
-                    Name = tillSubject.Name,
-                    AccountNumber = tillSubject.AccountNumber,
-                    AccountType = tillSubject.AccountType
-                },
-                DebitAccountId = new AccountId()
-                {
-                    Id = customerSubject.Account.Id,
-                    PartitionKey = customerSubject.Account.PartitionKey,
-                    Name = customerSubject.Name,
-                    AccountNumber = customerSubject.AccountNumber,
-                    AccountType = customerSubject.AccountType
-                },
+                DestAccount = tillSubject.ToAccountId(),
+                SourceAccount = customerSubject.ToAccountId(),
                 Charge = null,
                 Currency = 0
             },
@@ -418,5 +221,36 @@ namespace Msape.BookKeeping.Api.Controllers
 
             return Accepted(Url.ActionLink("Get", "transactions", values: new { id }));
         }
+
+        [NonAction]
+        public static Guid ToGuid(long transactionId)
+        {
+            Span<byte> guidBytes = stackalloc byte[16];
+            //copy ticks
+            CopyBytes(guidBytes, DateTime.UtcNow.Ticks);
+            CopyBytes(guidBytes[8..], transactionId);
+            return new Guid(guidBytes);
+
+
+            static void CopyBytes(Span<byte> dest, long value)
+            {
+                var bytes = BitConverter.GetBytes(value);
+                //use the little endian format always to reverse the bytes
+                if (!BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(bytes);
+                }
+                //repeat the same process
+                bytes.CopyTo(dest);
+            }
+        }
+
+        [NonAction]
+        private async Task<long> NextTxIdAsync()
+            => await _bookKeepingContext.NextTransactionIdAsync(HttpContext.RequestAborted).ConfigureAwait(false);
+
+        [NonAction]
+        private async Task<CacheableAccountSubject> GetSubjectAsync(string accountNumber, AccountType accountType)
+            => await _subjectCache.GetSubjectAsync(accountNumber, accountType, HttpContext.RequestAborted).ConfigureAwait(false);
     }
 }

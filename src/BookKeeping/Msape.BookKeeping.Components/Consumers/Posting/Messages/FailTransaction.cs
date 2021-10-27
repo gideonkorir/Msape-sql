@@ -7,7 +7,8 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
     [ConfigureConsumeTopology(false)]
     public record FailTransaction
     {
-        public DocumentRef<Guid> Transaction { get; init; }
+        public Guid PostingId { get; init; }
+        public long TransactionId { get; init; }
         public DateTime Timestamp { get; init; }
         public DebitOrCreditFailReason FailReason { get; init; }
     }

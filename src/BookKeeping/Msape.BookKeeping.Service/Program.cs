@@ -1,6 +1,7 @@
 ﻿using GreenPipes;
 using MassTransit;
 using Microsoft.Azure.Cosmos;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,6 +10,7 @@ using Msape.BookKeeping.Components.Consumers.Posting;
 using Msape.BookKeeping.Components.Consumers.Posting.Saga;
 using Msape.BookKeeping.Components.Infra;
 using Msape.BookKeeping.Data;
+using Msape.BookKeeping.Data.EF;
 using System;
 using System.Threading.Tasks;
 
@@ -43,7 +45,7 @@ namespace Msape.BookKeeping.Service
                         })
                     };
                     services.AddSingleton(client);
-                    services.AddSingleton<ICosmosAccount>(new CosmosAccount(client, ("msape2", "accounts"), ("msape2", "account_numbers"), ("msape2", "transactions")));
+                    //services.AddSingleton<ICosmosAccount>(new CosmosAccount(client, ("msape2", "accounts"), ("msape2", "account_numbers"), ("msape2", "transactions")));
                     services.AddSingleton(opts);
 
                     services.AddMassTransit(configurator =>
@@ -77,9 +79,6 @@ namespace Msape.BookKeeping.Service
                                 filter.Exclude<PostTransactionToDestConsumer>();
                                 filter.Exclude<PostTransactionChargeConsumer>();
                                 filter.Exclude<ReversePostTransactionToSource>();
-
-                                filter.Exclude<CompleteTransactionConsumer>();
-                                filter.Exclude<CompleteTransactionChargeConsumer>();
                             });
 
                             configurator.ReceiveEndpoint("transaction-processing", endpoint =>
@@ -94,8 +93,6 @@ namespace Msape.BookKeeping.Service
                                     r.Ignore<CosmosException>(ex => ex.StatusCode == System.Net.HttpStatusCode.NotFound);
                                     r.Interval(3, TimeSpan.FromSeconds(5));
                                 });
-                                endpoint.ConfigureConsumer<CompleteTransactionConsumer>(context);
-                                endpoint.ConfigureConsumer<CompleteTransactionChargeConsumer>(context);
                             });
 
                             foreach(var value in Enum.GetValues<AccountType>())
@@ -127,6 +124,16 @@ namespace Msape.BookKeeping.Service
                         });
                     });
                     services.AddHostedService<MassTransitHostedService>();
+
+                    services.AddDbContext<BookKeepingContext>(opts =>
+                    {
+                        opts.UseSqlServer(host.Configuration.GetConnectionString("BookKeepingContext"),
+                            server =>
+                            {
+                                server.EnableRetryOnFailure(3);
+                            });
+                    });
+                    services.AddHostedService<EnsureDbCreatedHostedService>();
                 });
             await host.RunConsoleAsync();            
         }

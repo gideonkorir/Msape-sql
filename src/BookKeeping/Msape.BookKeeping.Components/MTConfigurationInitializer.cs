@@ -16,7 +16,7 @@ namespace Msape.BookKeeping.Components
         [ModuleInitializer]
         public static void Initialize()
         {
-            GlobalTopology.Send.UseSessionIdFormatter<PostTransactionToDest>(x => x.Message.DestAccount.Id.ToString("D", CultureInfo.InvariantCulture));
+            GlobalTopology.Send.UseSessionIdFormatter<PostTransactionToDest>(x => x.Message.DestAccountId.ToString("D", CultureInfo.InvariantCulture));
         }
     }
 }

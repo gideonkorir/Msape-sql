@@ -31,7 +31,7 @@ namespace Msape.BookKeeping.Api
         {
             configurator.Send<T>(configure =>
             {
-                configure.UseSessionIdFormatter(p => p.Message.DebitAccountId.Id.ToString("D", CultureInfo.InvariantCulture));
+                configure.UseSessionIdFormatter(p => p.Message.SourceAccount.Id.ToString("D", CultureInfo.InvariantCulture));
             });
         }
     }

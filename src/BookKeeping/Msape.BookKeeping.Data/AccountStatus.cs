@@ -1,6 +1,6 @@
 ﻿namespace Msape.BookKeeping.Data
 {
-    public enum AccountStatus
+    public enum AccountStatus : byte
     {
         Active,
         Suspended,

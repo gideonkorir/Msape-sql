@@ -39,11 +39,13 @@ namespace Msape.BookKeeping.Api
         {
             return type switch
             {
-                AccountType.SystemAgentFloat => "drcr-system-agent-float",
-                AccountType.SendMoneyCharge => "drcr-system-customer-send-money-charge",
-                AccountType.AgentFloat => "drcr-agent-float",
-                AccountType.CustomerAccount => "drcr-customer-account",
-                AccountType.CustomerWithdrawalCharge => "drcr-system-customer-withdrawal-charge",
+                AccountType.SystemAgentFloat => "post-system-agent-float",
+                AccountType.SendMoneyCharge => "post-system-customer-send-money-charge",
+                AccountType.AgentFloat => "post-agent-float",
+                AccountType.CustomerAccount => "post-customer-account",
+                AccountType.CustomerWithdrawalCharge => "post-system-customer-withdrawal-charge",
+                AccountType.TillAccount => "post-till-account",
+                AccountType.CashCollectionAccount => "post-cash-collection",
                 _ => throw new NotImplementedException($"The account type {type} has not been mapped")
             };
         }

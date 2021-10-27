@@ -30,7 +30,7 @@ namespace Msape.BookKeeping.Api.Infra
         public async Task Send(PostTransaction command, CancellationToken cancellationToken)
         {
             var sendEndpoint = await _bus.GetSendEndpoint(
-                address: _accountTypeQueueMapping[command.DebitAccountId.AccountType]
+                address: _accountTypeQueueMapping[command.SourceAccount.AccountType]
                 ).ConfigureAwait(false);
             await sendEndpoint.Send(command, cancellationToken).ConfigureAwait(false);
         }

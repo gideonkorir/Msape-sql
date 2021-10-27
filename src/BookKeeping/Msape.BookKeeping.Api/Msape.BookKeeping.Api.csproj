@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Msape.BookKeeping.Data.EF\Msape.BookKeeping.Data.EF.csproj" />
     <ProjectReference Include="..\Msape.BookKeeping.Data\Msape.BookKeeping.Data.csproj" />
     <ProjectReference Include="..\Msape.BookKeeping.InternalContracts\Msape.BookKeeping.InternalContracts.csproj" />
   </ItemGroup>

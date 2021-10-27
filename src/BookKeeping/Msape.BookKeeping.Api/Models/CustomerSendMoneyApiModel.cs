@@ -12,38 +12,24 @@ namespace Msape.BookKeeping.Api.Models
 
     public class CustomerSendMoneyApiModelValidator : AbstractValidator<CustomerSendMoneyApiModel>
     {
-        public CustomerSendMoneyApiModelValidator(ICosmosAccount cosmosAccount)
+        public CustomerSendMoneyApiModelValidator(ISubjectCache subjectCache)
         {
             RuleFor(c => c.FromMsisdn).NotEmpty()
                 .WithMessage("The source customer number is required")
                 .MustAsync(async (context, customerNumber, cancellationToken) =>
                 {
-                    var subject = await AccountNumberQueryHelper.GetSubject(
-                        container: cosmosAccount.AccountNumbers,
-                        linkedAccountKey: "CUSTOMER_ACCOUNT",
-                        accountNumber: customerNumber,
-                        partitionKeyIsReversedAccountNumber: true,
-                        requestOptions: null,
-                        cancellationToken: cancellationToken
-                        )
+                    var subject = await subjectCache.GetSubjectAsync(customerNumber, Data.AccountType.CustomerAccount, cancellationToken)
                         .ConfigureAwait(false);
-                    return subject != null && subject.AccountType == Data.AccountType.AgentFloat;
+                    return subject != null;
                 })
-                .WithMessage(context => $"Customer account with number {context.FromMsisdn} was not found"); ;
+                .WithMessage(context => $"Customer account with number {context.FromMsisdn} was not found");
             RuleFor(c => c.ToMsisdn).NotEmpty()
                 .WithMessage("The destination customer number is required")
                 .MustAsync(async (context, customerNumber, cancellationToken) =>
                 {
-                    var subject = await AccountNumberQueryHelper.GetSubject(
-                        container: cosmosAccount.AccountNumbers,
-                        linkedAccountKey: "CUSTOMER_ACCOUNT",
-                        accountNumber: customerNumber,
-                        partitionKeyIsReversedAccountNumber: true,
-                        requestOptions: null,
-                        cancellationToken: cancellationToken
-                        )
+                    var subject = await subjectCache.GetSubjectAsync(customerNumber, Data.AccountType.CustomerAccount, cancellationToken)
                         .ConfigureAwait(false);
-                    return subject != null && subject.AccountType == Data.AccountType.CustomerAccount;
+                    return subject != null;
                 })
                 .WithMessage(context => $"Customer account with number {context.ToMsisdn} was not found"); ;
             RuleFor(c => c.Amount).InclusiveBetween(50, 300000)
