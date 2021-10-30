@@ -38,10 +38,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                     {
                         PostingId = context.Instance.CorrelationId,
                         TransactionId = context.Instance.TransactionId,
-                        Timestamp = context.Instance.Timestamp,
-                        Amount = context.Instance.Amount,
-                        TransactionType = context.Instance.TransactionType,
-                        IsContra = context.Instance.IsContra
+                        Timestamp = context.Instance.Timestamp
                     },
                     contextCallback: (sagaContext, sendContext) =>
                     {

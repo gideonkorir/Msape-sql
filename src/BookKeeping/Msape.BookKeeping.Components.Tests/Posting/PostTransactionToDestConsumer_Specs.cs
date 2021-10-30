@@ -61,14 +61,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             {
                 PostingId = Guid.NewGuid(),
                 TransactionId = id,
-                Timestamp = DateTime.UtcNow,
-                Amount = new MoneyInfo()
-                {
-                    Value = 100,
-                    Currency = 0
-                },
-                IsContra = false,
-                TransactionType = Data.TransactionType.AgentFloatTopup
+                Timestamp = DateTime.UtcNow
             };
             await _testHarness.InputQueueSendEndpoint.Send(message).ConfigureAwait(false);
             Assert.True(await _consumerHarness.Consumed.Any<PostTransactionToDest>());
@@ -144,14 +137,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             {
                 PostingId = Guid.NewGuid(),
                 TransactionId = id,
-                Timestamp = DateTime.UtcNow,
-                Amount = new MoneyInfo()
-                {
-                    Value = 100,
-                    Currency = 0
-                },
-                IsContra = false,
-                TransactionType = Data.TransactionType.AgentFloatTopup
+                Timestamp = DateTime.UtcNow
             };
             await _testHarness.InputQueueSendEndpoint.Send(message).ConfigureAwait(false);
             Assert.True(await _consumerHarness.Consumed.Any<PostTransactionToDest>());
@@ -248,14 +234,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             {
                 PostingId = Guid.NewGuid(),
                 TransactionId = id,
-                Timestamp = DateTime.UtcNow,
-                Amount = new MoneyInfo()
-                {
-                    Value = 100,
-                    Currency = 0
-                },
-                IsContra = false,
-                TransactionType = Data.TransactionType.AgentFloatTopup
+                Timestamp = DateTime.UtcNow
             };
             await _testHarness.InputQueueSendEndpoint.Send(message).ConfigureAwait(false);
             Assert.True(await _consumerHarness.Consumed.Any<PostTransactionToDest>());

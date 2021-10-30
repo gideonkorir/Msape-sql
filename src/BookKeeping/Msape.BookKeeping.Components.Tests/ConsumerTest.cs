@@ -52,7 +52,7 @@ namespace Msape.BookKeeping.Components.Tests
         {
             services.AddDbContext<BookKeepingContext>(opts =>
             {
-                opts.UseInMemoryDatabase("BookKeeping", config =>
+                opts.UseInMemoryDatabase(GetType().Name, config =>
                 {
                 });
             });
