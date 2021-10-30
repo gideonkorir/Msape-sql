@@ -1,18 +1,14 @@
-﻿using MassTransit.ExtensionsDependencyInjectionIntegration;
-using MassTransit.Testing;
+﻿using MassTransit.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Msape.BookKeeping.Components.Consumers.Posting;
 using Msape.BookKeeping.Data.EF;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace Msape.BookKeeping.Components.Tests.Posting
-{ 
+{
     public class Transaction_Is_Posted_To_Dest : ConsumerTest<PostTransactionToDestConsumer>
     {
         private readonly long id = DateTime.Now.Ticks;
