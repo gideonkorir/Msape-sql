@@ -6,12 +6,17 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Msape.BookKeeping.Components.Tests.Posting
 {
     public class Transaction_Is_Posted_To_Dest : ConsumerTest<PostTransactionToDestConsumer>
     {
         private readonly long id = DateTime.Now.Ticks;
+
+        public Transaction_Is_Posted_To_Dest(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
 
         protected override Task SeedContext(BookKeepingContext context)
         {
@@ -88,6 +93,10 @@ namespace Msape.BookKeeping.Components.Tests.Posting
     public class Post_To_Dest_Is_Idempotent : ConsumerTest<PostTransactionToDestConsumer>
     {
         private readonly long id = DateTime.Now.Ticks;
+
+        public Post_To_Dest_Is_Idempotent(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
 
         protected override Task SeedContext(BookKeepingContext context)
         {
@@ -184,6 +193,10 @@ namespace Msape.BookKeeping.Components.Tests.Posting
     public class Post_To_Dest_Failure_Scenario : ConsumerTest<PostTransactionToDestConsumer>
     {
         private readonly long id = DateTime.Now.Ticks;
+
+        public Post_To_Dest_Failure_Scenario(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
 
         protected override Task SeedContext(BookKeepingContext context)
         {

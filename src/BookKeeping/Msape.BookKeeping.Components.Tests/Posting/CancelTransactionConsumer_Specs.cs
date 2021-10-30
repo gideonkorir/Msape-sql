@@ -8,12 +8,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Msape.BookKeeping.Components.Tests.Posting
 {
     public class Consumer_Will_Cancel_Transaction : ConsumerTest<CancelTransactionConsumer>
     {
         private readonly long id = DateTime.Now.Ticks;
+
+        public Consumer_Will_Cancel_Transaction(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
 
         protected override Task SeedContext(BookKeepingContext context)
         {

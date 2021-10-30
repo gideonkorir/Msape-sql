@@ -6,12 +6,17 @@ using Msape.BookKeeping.InternalContracts;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Msape.BookKeeping.Components.Tests.Posting
 {
     public class Consumer_Posts_Transaction_To_Source : ConsumerTest<PostTransactionToSourceConsumer>
     {
         private readonly long id = DateTime.Now.Ticks;
+
+        public Consumer_Posts_Transaction_To_Source(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
 
         protected override Task SeedContext(BookKeepingContext context)
         {
@@ -92,6 +97,10 @@ namespace Msape.BookKeeping.Components.Tests.Posting
     {
         private readonly long id = DateTime.Now.Ticks;
 
+        public Consumer_Fails_To_Post_On_Insufficient_Balance(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
+
         protected override Task SeedContext(BookKeepingContext context)
         {
             context.Accounts.Add(new Data.Account(
@@ -170,6 +179,10 @@ namespace Msape.BookKeeping.Components.Tests.Posting
     public class Consumer_Is_Idempotent : ConsumerTest<PostTransactionToSourceConsumer>
     {
         private readonly long id = DateTime.Now.Ticks;
+
+        public Consumer_Is_Idempotent(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
 
         protected override Task SeedContext(BookKeepingContext context)
         {

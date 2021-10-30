@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Msape.BookKeeping.Components.Tests.Posting
 {
@@ -12,6 +13,10 @@ namespace Msape.BookKeeping.Components.Tests.Posting
     {
         private readonly long id = DateTime.Now.Ticks;
         private readonly long chargeId = DateTime.Now.Ticks / 2;
+
+        public TransactionCharge_Is_Posted(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
 
         protected override Task SeedContext(BookKeepingContext context)
         {

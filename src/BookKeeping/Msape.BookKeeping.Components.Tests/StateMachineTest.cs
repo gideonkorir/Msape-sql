@@ -25,7 +25,6 @@ namespace Msape.BookKeeping.Components.Tests
 
         protected StateMachineTest(ITestOutputHelper testOutputHelper)
         {
-            testOutputHelper.BuildLogger();
             var services = new ServiceCollection();
             services
                 .AddSingleton<ILoggerFactory>(provider => LogFactory.Create(testOutputHelper))

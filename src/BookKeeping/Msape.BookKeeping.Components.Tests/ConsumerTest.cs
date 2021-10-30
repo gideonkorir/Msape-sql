@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using Divergic.Logging.Xunit;
+using MassTransit;
 using MassTransit.ExtensionsDependencyInjectionIntegration;
 using MassTransit.TestFramework.Logging;
 using MassTransit.Testing;
@@ -9,6 +10,7 @@ using Msape.BookKeeping.Data.EF;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Msape.BookKeeping.Components.Tests
 {
@@ -21,11 +23,11 @@ namespace Msape.BookKeeping.Components.Tests
 
         protected virtual TimeSpan TestTimeout => TimeSpan.FromSeconds(15);
 
-        protected ConsumerTest()
+        protected ConsumerTest(ITestOutputHelper testOutputHelper)
         {
             var services = new ServiceCollection();
             services
-                .AddSingleton<ILoggerFactory>(provider => new TestOutputLoggerFactory(true))
+                .AddSingleton<ILoggerFactory>(provider => LogFactory.Create(testOutputHelper))
                 .AddLogging()
                 .AddMassTransitInMemoryTestHarness(cfg =>
                 {
