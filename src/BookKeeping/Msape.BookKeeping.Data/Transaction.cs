@@ -186,7 +186,7 @@ namespace Msape.BookKeeping.Data
             {
                 throw new ArgumentException($"Can not mark failed with {nameof(failReason)} == {nameof(TransactionFailReason.None)}");
             }
-            if (Status == TransactionStatus.Initiated)
+            if (Status == TransactionStatus.Pending)
             {
                 Status = TransactionStatus.Failed;
                 FailReason = failReason;
