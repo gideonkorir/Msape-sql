@@ -52,28 +52,17 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
             return
                 binder.Send(
                     destinationAddressProvider: context => sagaOptions.AccountTypeSendEndpoint(context.Instance.SourceAccount.AccountType),
-                    messageFactory: context => new ReversePostTransactionToSource()
+                    messageFactory: context => new CancelTransaction()
                     {
                         PostingId = context.Instance.CorrelationId,
                         TransactionId = context.Data.TransactionId,
-                        Timestamp = context.Instance.Timestamp,
-                        IsContra = context.Instance.IsContra,
-                        Account = context.Instance.SourceAccount.ToAccountId(),
-                        Amount = context.Instance.Amount,
-                        TransactionType = context.Instance.TransactionType,
-                        Charge = context.Instance.ChargeInfo == null ? null : new LinkedTransactionInfo()
-                        {
-                            Amount = context.Instance.ChargeInfo.Amount,
-                            DestAccount = context.Instance.ChargeInfo.DestAccount.ToAccountId(),
-                            TransactionId = context.Instance.ChargeInfo.ChargeId,
-                            TransactionType = context.Instance.ChargeInfo.TransactionType
-                        }
+                        Timestamp = context.Instance.Timestamp
                     },
                     contextCallback: context => context.ResponseAddress ??= context.SourceAddress
                 );
         }
 
-        public static EventActivityBinder<PostTransactionSaga, TransactionPostToSourceReversed> SendFailTransaction(this EventActivityBinder<PostTransactionSaga, TransactionPostToSourceReversed> binder, PostTransactionStateMachineOptions sagaOptions)
+        public static EventActivityBinder<PostTransactionSaga, TransactionCancelled> SendFailTransaction(this EventActivityBinder<PostTransactionSaga, TransactionCancelled> binder, PostTransactionStateMachineOptions sagaOptions)
         {
             return
                 binder.Send(

@@ -10,7 +10,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
         public Event<TransactionPostedToSource> PostedToSource { get; set; }
         public Event<TransactionPostedToDest> PostedToDest { get; set; }
         public Event<PostTransactionToDestFailed> PostToDestFailed { get; set; }
-        public Event<TransactionPostToSourceReversed> PostToSourceReversed { get; set; }
+        public Event<TransactionCancelled> PostToSourceReversed { get; set; }
         public Event<TransactionFailed> TransactionFailed { get; set; }
         public Event<TransactionChargePosted> ChargePosted { get; set; }
 

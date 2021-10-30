@@ -25,7 +25,8 @@ namespace Msape.BookKeeping.Components.Tests
         {
             var services = new ServiceCollection();
             services
-                //.AddSingleton<ILoggerFactory>(provider => new TestOutputLoggerFactory(true))
+                .AddSingleton<ILoggerFactory>(provider => new TestOutputLoggerFactory(true))
+                .AddLogging()
                 .AddMassTransitInMemoryTestHarness(cfg =>
                 {
                     cfg.AddConsumer<T>();
