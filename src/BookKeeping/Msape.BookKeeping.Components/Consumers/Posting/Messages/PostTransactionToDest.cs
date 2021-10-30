@@ -13,7 +13,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
         public bool IsContra { get; init; }
         public MoneyInfo Amount { get; init; }
         public DateTime Timestamp { get; init; }
-        public long DestAccountId { get; init; }
     }
 
 

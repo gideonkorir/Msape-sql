@@ -1,6 +1,8 @@
 ﻿using Automatonymous;
 using Automatonymous.Binders;
+using MassTransit.Azure.ServiceBus.Core;
 using System;
+using System.Globalization;
 
 namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
 {
@@ -37,12 +39,15 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                         PostingId = context.Instance.CorrelationId,
                         TransactionId = context.Instance.TransactionId,
                         Timestamp = context.Instance.Timestamp,
-                        DestAccountId = context.Instance.DestAccount.AccountId,
                         Amount = context.Instance.Amount,
                         TransactionType = context.Instance.TransactionType,
                         IsContra = context.Instance.IsContra
                     },
-                    contextCallback: context => context.ResponseAddress ??= context.SourceAddress
+                    contextCallback: (sagaContext, sendContext) =>
+                    {
+                        sendContext.ResponseAddress ??= sendContext.SourceAddress;
+                        sendContext.SetSessionId(sagaContext.Instance.DestAccount.AccountId.ToString(CultureInfo.InvariantCulture));
+                    }
                 );
         }
         public static EventActivityBinder<PostTransactionSaga, PostTransactionToDestFailed> SendUndoInitiate(this EventActivityBinder<PostTransactionSaga, PostTransactionToDestFailed> binder, PostTransactionStateMachineOptions sagaOptions)

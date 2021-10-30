@@ -17,10 +17,11 @@ namespace Msape.BookKeeping.Components.Tests
         protected readonly InMemoryTestHarness _testHarness;
         protected readonly IServiceProvider _provider;
         protected readonly IConsumerTestHarness<T> _consumerHarness;
+        protected readonly IBusRegistrationContext _busRegistrationContext;
 
         protected virtual TimeSpan TestTimeout => TimeSpan.FromSeconds(15);
 
-        public ConsumerTest()
+        protected ConsumerTest()
         {
             var services = new ServiceCollection();
             services
@@ -38,10 +39,11 @@ namespace Msape.BookKeeping.Components.Tests
             ConfigureServices(services);
             _provider = services.BuildServiceProvider(true);
             _testHarness = _provider.GetRequiredService<InMemoryTestHarness>();
+            _busRegistrationContext = _provider.GetRequiredService<IBusRegistrationContext>();
             _testHarness.TestTimeout = TestTimeout;
             _testHarness.OnConfigureInMemoryReceiveEndpoint += (config) =>
             {
-                config.ConfigureConsumer<T>(_provider.GetRequiredService<IBusRegistrationContext>());
+                config.ConfigureConsumer<T>(_busRegistrationContext);
             };
             _consumerHarness = _provider.GetRequiredService<IConsumerTestHarness<T>>();
         }
