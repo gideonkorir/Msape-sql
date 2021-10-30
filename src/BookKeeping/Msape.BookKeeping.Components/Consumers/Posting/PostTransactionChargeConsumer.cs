@@ -19,12 +19,12 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
         public async Task Consume(ConsumeContext<PostTransactionCharge> context)
         {
             //if we have credited the account then ignore
-            var account = await _bookeepingContext.Accounts
-                    .SingleAsync(c => c.Id == context.Message.PostToAccountId, context.CancellationToken)
-                    .ConfigureAwait(false);
             var tx = await _bookeepingContext.Transactions
                 .SingleAsync(c => c.Id == context.Message.ChargeId, context.CancellationToken)
                 .ConfigureAwait(false);
+            var account = await _bookeepingContext.Accounts
+                    .SingleAsync(c => c.Id == tx.DestAccount.AccountId, context.CancellationToken)
+                    .ConfigureAwait(false);
             var failReason = tx.PostToDestination(account);
             if (failReason.HasValue)
             {
@@ -43,7 +43,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             await context.RespondAsync(new TransactionChargePosted()
             {
                 PostingId = context.Message.PostingId,
-                PostedToAccountId = context.Message.PostToAccountId,
                 BalanceAfter = new MoneyInfo
                 {
                     Value = destEntry.BalanceAfter.Value,

@@ -7,7 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Divergic.Logging.Xunit" Version="3.6.0" />
+    <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.2.3" />
     <PackageReference Include="MassTransit.TestFramework" Version="7.2.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="5.0.11" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Include="Moq" Version="4.16.1" />
@@ -24,10 +27,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Msape.BookKeeping.Components\Msape.BookKeeping.Components.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Posting\" />
   </ItemGroup>
 
 </Project>

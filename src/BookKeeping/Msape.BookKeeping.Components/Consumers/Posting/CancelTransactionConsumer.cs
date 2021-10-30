@@ -8,18 +8,18 @@ using System.Threading.Tasks;
 
 namespace Msape.BookKeeping.Components.Consumers.Posting
 {
-    public class ReversePostToSourceConsumer : IConsumer<ReversePostTransactionToSource>
+    public class CancelTransactionConsumer : IConsumer<CancelTransaction>
     {
         private readonly BookKeepingContext _bookKeepingContext;
-        private readonly ILogger<ReversePostToSourceConsumer> _logger;
+        private readonly ILogger<CancelTransactionConsumer> _logger;
 
-        public ReversePostToSourceConsumer(BookKeepingContext bookKeepingContext, ILogger<ReversePostToSourceConsumer> logger)
+        public CancelTransactionConsumer(BookKeepingContext bookKeepingContext, ILogger<CancelTransactionConsumer> logger)
         {
             _bookKeepingContext = bookKeepingContext ?? throw new ArgumentNullException(nameof(bookKeepingContext));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task Consume(ConsumeContext<ReversePostTransactionToSource> context)
+        public async Task Consume(ConsumeContext<CancelTransaction> context)
         {
             //if we have credited the account then ignore. we could proceed but then the last undo made us unable to undo again
             var transaction = await _bookKeepingContext.Transactions
@@ -28,7 +28,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             var account = await _bookKeepingContext.Accounts
                 .FindAsync(new object[] { transaction.SourceAccount.AccountId }, context.CancellationToken)
                 .ConfigureAwait(false);
-            if (transaction.Status == TransactionStatus.Failed)
+            if (transaction.Status == TransactionStatus.Cancelled)
             {
                 //publish message
             }
@@ -56,10 +56,10 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             }
         }
 
-        private static async Task RespondUndone(ConsumeContext<ReversePostTransactionToSource> context, Transaction transaction)
+        private static async Task RespondUndone(ConsumeContext<CancelTransaction> context, Transaction transaction)
         {
             var entry = transaction.GetDestEntry();
-            await context.RespondAsync(new TransactionPostToSourceReversed()
+            await context.RespondAsync(new TransactionCancelled()
             {
                 PostingId = context.Message.PostingId,
                 BalanceAfter = new MoneyInfo

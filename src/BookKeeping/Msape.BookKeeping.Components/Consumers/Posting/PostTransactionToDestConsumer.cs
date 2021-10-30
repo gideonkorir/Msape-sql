@@ -30,7 +30,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             else
             {
                 var account = await _bookeepingContext.Accounts
-                    .FindAsync(new object[] { context.Message.DestAccountId }, context.CancellationToken)
+                    .FindAsync(new object[] { transaction.DestAccount.AccountId }, context.CancellationToken)
                     .ConfigureAwait(false);
                 if(transaction.Status == TransactionStatus.Initiated)
                 {
@@ -39,13 +39,13 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
                         .ConfigureAwait(false);
                     var task = transaction.Status == TransactionStatus.Succeeded
                         ? RespondPosted(context, transaction)
-                        : RespondPostFailed(context, account, failReason.Value);
+                        : RespondPostFailed(context, account, transaction, failReason.Value);
                     await task.ConfigureAwait(false);
                 }
                 else if(transaction.Status == TransactionStatus.Failed
                     && transaction.DestFailReason.HasValue)
                 {
-                    await RespondPostFailed(context, account, transaction.DestFailReason.Value)
+                    await RespondPostFailed(context, account, transaction, transaction.DestFailReason.Value)
                         .ConfigureAwait(false);
                 }
             }
@@ -57,7 +57,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             await context.RespondAsync(new TransactionPostedToDest()
             {
                 PostingId = context.Message.PostingId,
-                AccountId = context.Message.DestAccountId,
+                AccountId = transaction.DestAccount.AccountId,
                 BalanceAfter = new MoneyInfo
                 {
                     Value = entry.BalanceAfter.Value,
@@ -68,12 +68,12 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             }).ConfigureAwait(false);
         }
 
-        private static async Task RespondPostFailed(ConsumeContext<PostTransactionToDest> context, Account account, DebitOrCreditFailReason failReason)
+        private static async Task RespondPostFailed(ConsumeContext<PostTransactionToDest> context, Account account, Transaction transaction, DebitOrCreditFailReason failReason)
         {
             await context.RespondAsync(new PostTransactionToDestFailed()
             {
                 PostingId = context.Message.PostingId,
-                AccountId = context.Message.DestAccountId,
+                AccountId = transaction.DestAccount.AccountId,
                 AccountBalance = new MoneyInfo
                 {
                     Value = account.Balance.Value,

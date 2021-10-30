@@ -3,7 +3,7 @@ using System;
 
 namespace Msape.BookKeeping.Components.Consumers.Posting
 {
-    public record TransactionPostToSourceReversed
+    public record TransactionCancelled
     {
         public Guid PostingId { get; init; }
         public long TransactionId { get; init; }

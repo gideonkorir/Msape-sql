@@ -77,7 +77,7 @@ namespace Msape.BookKeeping.Service
                                 filter.Exclude<PostTransactionToSourceConsumer>();
                                 filter.Exclude<PostTransactionToDestConsumer>();
                                 filter.Exclude<PostTransactionChargeConsumer>();
-                                filter.Exclude<ReversePostTransactionToSource>();
+                                filter.Exclude<CancelTransaction>();
                             });
 
                             configurator.ReceiveEndpoint("transaction-processing", endpoint =>
@@ -117,7 +117,7 @@ namespace Msape.BookKeeping.Service
                                     endpoint.ConfigureConsumer<PostTransactionToSourceConsumer>(context);
                                     endpoint.ConfigureConsumer<PostTransactionToDestConsumer>(context);
                                     endpoint.ConfigureConsumer<PostTransactionChargeConsumer>(context);
-                                    endpoint.ConfigureConsumer<ReversePostToSourceConsumer>(context);
+                                    endpoint.ConfigureConsumer<CancelTransactionConsumer>(context);
                                 });
                             }
                         });
