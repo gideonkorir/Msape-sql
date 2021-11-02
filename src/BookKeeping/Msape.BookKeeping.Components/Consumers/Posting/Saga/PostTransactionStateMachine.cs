@@ -11,7 +11,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
         public Event<TransactionPostedToDest> PostedToDest { get; set; }
         public Event<PostTransactionToDestFailed> PostToDestFailed { get; set; }
         public Event<TransactionCancelled> PostToSourceReversed { get; set; }
-        public Event<TransactionFailed> TransactionFailed { get; set; }
         public Event<TransactionChargePosted> ChargePosted { get; set; }
 
         //states
@@ -38,7 +37,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                 p.OnMissingInstance(p => p.Discard());
                 p.ConfigureConsumeTopology = false; //consumer will do a Respond & not a publish
             });
-            Event(() => TransactionFailed, p => p.CorrelateById(id => id.Message.PostingId).OnMissingInstance(p => p.Discard()));
             Event(() => PostToSourceReversed, p =>
             {
                 p.CorrelateById(id => id.Message.PostingId);
@@ -106,7 +104,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
             During(ReversingAtSource,
                 Ignore(PostedToSource),
                 Ignore(PostToDestFailed),
-                Ignore(TransactionFailed),
                 When(PostToSourceReversed)
                     .Then(c =>
                     {
@@ -119,14 +116,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                     .TransitionTo(MarkingAsFailed)
                     .SendFailTransaction(sagaOptions)
                     );
-
-            During(MarkingAsFailed,
-                Ignore(PostedToSource),
-                Ignore(PostToDestFailed),
-                Ignore(PostToSourceReversed),
-                When(TransactionFailed)
-                    .Finalize()
-                );
 
             During(PostingCharge,
                 Ignore(PostedToSource),
