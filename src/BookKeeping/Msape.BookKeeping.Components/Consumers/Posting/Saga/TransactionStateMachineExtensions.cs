@@ -47,7 +47,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                     }
                 );
         }
-        public static EventActivityBinder<PostTransactionSaga, PostTransactionToDestFailed> SendUndoInitiate(this EventActivityBinder<PostTransactionSaga, PostTransactionToDestFailed> binder, PostTransactionStateMachineOptions sagaOptions)
+        public static EventActivityBinder<PostTransactionSaga, PostTransactionToDestFailed> SendCancel(this EventActivityBinder<PostTransactionSaga, PostTransactionToDestFailed> binder, PostTransactionStateMachineOptions sagaOptions)
         {
             return
                 binder.Send(
@@ -57,22 +57,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                         PostingId = context.Instance.CorrelationId,
                         TransactionId = context.Data.TransactionId,
                         Timestamp = context.Instance.Timestamp
-                    },
-                    contextCallback: context => context.ResponseAddress ??= context.SourceAddress
-                );
-        }
-
-        public static EventActivityBinder<PostTransactionSaga, TransactionCancelled> SendFailTransaction(this EventActivityBinder<PostTransactionSaga, TransactionCancelled> binder, PostTransactionStateMachineOptions sagaOptions)
-        {
-            return
-                binder.Send(
-                    destinationAddress: sagaOptions.TransactionProcessingSendEndpoint,
-                    messageFactory: context => new FailTransaction()
-                    {
-                        PostingId = context.Instance.CorrelationId,
-                        TransactionId = context.Instance.TransactionId,
-                        Timestamp = context.Instance.Timestamp,
-                        FailReason = context.Instance.PostToDestData.FailReason.GetValueOrDefault()
                     },
                     contextCallback: context => context.ResponseAddress ??= context.SourceAddress
                 );

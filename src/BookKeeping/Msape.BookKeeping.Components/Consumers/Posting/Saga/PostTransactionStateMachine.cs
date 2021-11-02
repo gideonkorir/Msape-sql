@@ -10,13 +10,12 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
         public Event<TransactionPostedToSource> PostedToSource { get; set; }
         public Event<TransactionPostedToDest> PostedToDest { get; set; }
         public Event<PostTransactionToDestFailed> PostToDestFailed { get; set; }
-        public Event<TransactionCancelled> PostToSourceReversed { get; set; }
+        public Event<TransactionCancelled> Cancelled { get; set; }
         public Event<TransactionChargePosted> ChargePosted { get; set; }
 
         //states
         public State PostingToDestAccount { get; set; }
-        public State ReversingAtSource { get; set; }
-        public State MarkingAsFailed { get; set; }
+        public State Cancelling { get; set; }
         public State PostingCharge { get; set; }
 
         public PostTransactionStateMachine(PostTransactionStateMachineOptions sagaOptions)
@@ -37,7 +36,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                 p.OnMissingInstance(p => p.Discard());
                 p.ConfigureConsumeTopology = false; //consumer will do a Respond & not a publish
             });
-            Event(() => PostToSourceReversed, p =>
+            Event(() => Cancelled, p =>
             {
                 p.CorrelateById(id => id.Message.PostingId);
                 p.OnMissingInstance(p => p.Discard()); //should prob handle this
@@ -97,14 +96,14 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                             FailReason = c.Data.FailReason
                         };
                     })
-                    .TransitionTo(ReversingAtSource)
-                    .SendUndoInitiate(sagaOptions)
+                    .TransitionTo(Cancelling)
+                    .SendCancel(sagaOptions)
                     );
 
-            During(ReversingAtSource,
+            During(Cancelling,
                 Ignore(PostedToSource),
                 Ignore(PostToDestFailed),
-                When(PostToSourceReversed)
+                When(Cancelled)
                     .Then(c =>
                     {
                         c.Instance.UndoPostToSourceData = new SagaEntryData()
@@ -113,8 +112,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                             Timestamp = c.Data.Timestamp
                         };
                     })
-                    .TransitionTo(MarkingAsFailed)
-                    .SendFailTransaction(sagaOptions)
+                    .Finalize()
                     );
 
             During(PostingCharge,
