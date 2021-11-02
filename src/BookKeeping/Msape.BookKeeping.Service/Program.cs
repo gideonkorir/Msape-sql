@@ -36,7 +36,6 @@ namespace Msape.BookKeeping.Service
 
                     var opts = new PostTransactionStateMachineOptions()
                     {
-                        TransactionProcessingSendEndpoint = new Uri("queue:transaction-processing"),
                         AccountTypeSendEndpoint = new Func<AccountType, Uri>(accountType =>
                         {
                             var name = AccountTypeQueueHelper.GetQueueName(accountType);

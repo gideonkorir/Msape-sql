@@ -22,8 +22,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             base.ConfigureServices(services);
             services.AddSingleton(provider => new PostTransactionStateMachineOptions()
             {
-                AccountTypeSendEndpoint = (type) => _testHarness.InputQueueAddress,
-                TransactionProcessingSendEndpoint = _testHarness.InputQueueAddress
+                AccountTypeSendEndpoint = (type) => _testHarness.InputQueueAddress
             });
         }
     }
