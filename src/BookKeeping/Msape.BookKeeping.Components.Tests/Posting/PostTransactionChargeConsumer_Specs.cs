@@ -2,6 +2,7 @@
 using Msape.BookKeeping.Components.Consumers.Posting;
 using Msape.BookKeeping.Data.EF;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -66,18 +67,21 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                         src,
                         dest,
                         "notes",
-                        new Data.Transaction
-                        (
-                            chargeId,
-                            new Data.Money(0, 10),
-                            Data.TransactionType.TransactionCharge,
-                            false,
-                            DateTime.UtcNow,
-                            src,
-                            chrg,
-                            "null",
-                            null
-                        )
+                        new List<Data.Transaction>()
+                        {
+                            new Data.Transaction
+                            (
+                                chargeId,
+                                new Data.Money(0, 10),
+                                Data.TransactionType.TransactionCharge,
+                                false,
+                                DateTime.UtcNow,
+                                src,
+                                chrg,
+                                "null",
+                                null
+                            )
+                        }
                         )
                     );
             tx.Entity.PostToSource(cust.Entity);

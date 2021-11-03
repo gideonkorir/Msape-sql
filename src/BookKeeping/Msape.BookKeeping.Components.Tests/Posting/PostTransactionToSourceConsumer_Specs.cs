@@ -49,7 +49,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                 IsContra = false,
                 Currency = 0,
                 TransactionType = Data.TransactionType.AgentFloatTopup,
-                Charge = null,
+                Charges = null,
                 SourceAccount = new AccountId()
                 {
                     Id = 1,
@@ -132,7 +132,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                 IsContra = false,
                 Currency = 0,
                 TransactionType = Data.TransactionType.AgentFloatTopup,
-                Charge = null,
+                Charges = null,
                 SourceAccount = new AccountId()
                 {
                     Id = 1,
@@ -215,7 +215,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                 IsContra = false,
                 Currency = 0,
                 TransactionType = Data.TransactionType.AgentFloatTopup,
-                Charge = null,
+                Charges = null,
                 SourceAccount = new AccountId()
                 {
                     Id = 1,

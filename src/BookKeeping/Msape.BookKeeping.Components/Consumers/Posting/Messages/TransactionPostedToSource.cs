@@ -1,6 +1,7 @@
 ﻿using Msape.BookKeeping.Data;
 using Msape.BookKeeping.InternalContracts;
 using System;
+using System.Collections.Generic;
 
 namespace Msape.BookKeeping.Components.Consumers.Posting
 {
@@ -15,6 +16,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
         public AccountId SourceAccount { get; init; }
         public AccountId DestAccount { get; init; }
         public MoneyInfo SourceBalanceAfter { get; init; }
-        public LinkedTransactionInfo ChargeInfo { get; init; }
+        public List<LinkedTransactionInfo> Charges { get; init; } = new List<LinkedTransactionInfo>();
     }
 }

@@ -36,15 +36,14 @@ namespace Msape.BookKeeping.Service
 
                     var opts = new PostTransactionStateMachineOptions()
                     {
-                        TransactionProcessingSendEndpoint = new Uri("queue:transaction-processing"),
                         AccountTypeSendEndpoint = new Func<AccountType, Uri>(accountType =>
                         {
                             var name = AccountTypeQueueHelper.GetQueueName(accountType);
                             return new Uri($"queue:{name}");
-                        })
+                        }),
+                        TtlProvider = (txType) => -1L
                     };
                     services.AddSingleton(client);
-                    //services.AddSingleton<ICosmosAccount>(new CosmosAccount(client, ("msape2", "accounts"), ("msape2", "account_numbers"), ("msape2", "transactions")));
                     services.AddSingleton(opts);
 
                     services.AddMassTransit(configurator =>

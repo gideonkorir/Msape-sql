@@ -32,7 +32,7 @@ namespace Msape.BookKeeping.Data
             TransactionAccountInfo sourceAccount,
             TransactionAccountInfo destAccount,
             string notes,
-            Transaction charge)
+            List<Transaction> charges)
         {
 
             if (sourceAccount is null)
@@ -58,14 +58,17 @@ namespace Msape.BookKeeping.Data
             DestAccount = destAccount;
             Notes = notes;
             FailReason = TransactionFailReason.None;
-            if (charge != null)
+            if (charges != null)
             {
-                if(charge.ParentId.HasValue && charge.ParentId.Value != Id)
+                foreach (var charge in charges)
                 {
-                    throw new ArgumentException($"Charge.ParentId ({charge.ParentId}) value is different from transaction.Id ({Id})");
+                    if (charge.ParentId.HasValue && charge.ParentId.Value != Id)
+                    {
+                        throw new ArgumentException($"Charge.ParentId ({charge.ParentId}) value is different from transaction.Id ({Id})");
+                    }
+                    charge.ParentId = Id;
+                    Charges.Add(charge);
                 }
-                charge.ParentId = Id;
-                Charges.Add(charge);
             }
         }
 

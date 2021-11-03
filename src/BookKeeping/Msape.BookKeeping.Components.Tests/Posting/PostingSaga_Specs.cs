@@ -23,7 +23,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             services.AddSingleton(provider => new PostTransactionStateMachineOptions()
             {
                 AccountTypeSendEndpoint = (type) => _testHarness.InputQueueAddress,
-                TransactionProcessingSendEndpoint = _testHarness.InputQueueAddress
+                TtlProvider = (type) => -1
             });
         }
     }
@@ -62,7 +62,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                 Timestamp = DateTime.UtcNow,
                 TransactionType = Data.TransactionType.CustomerSendMoney,
                 SourceBalanceAfter = new MoneyInfo() { Currency = 1, Value = 50_000 },
-                ChargeInfo = null
+                Charges = null
             };
             await SendToSaga(message);
             Assert.True(await _sagaHarness.Sagas.Any());
@@ -106,7 +106,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                 Timestamp = DateTime.UtcNow,
                 TransactionType = Data.TransactionType.CustomerSendMoney,
                 SourceBalanceAfter = new MoneyInfo() { Currency = 1, Value = 50_000 },
-                ChargeInfo = null
+                Charges = null
             };
             await SendToSaga(message);
             Assert.True(await _sagaHarness.Sagas.Any());

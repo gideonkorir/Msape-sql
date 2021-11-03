@@ -4,6 +4,7 @@ using Msape.BookKeeping.Data;
 using Msape.BookKeeping.Data.EF;
 using Msape.BookKeeping.InternalContracts;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,13 +65,13 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
         /// <returns></returns>
         protected virtual Transaction MapToTransaction(PostTransaction message, CancellationToken cancellationToken)
         {
-            Transaction charge = null;
-            if (message.Charge != null)
+            List<Transaction> charges = null;
+            if (message.Charges != null)
             {
-                charge = new Transaction(
-                    id: message.Charge.Id,
-                    amount: new Money(message.Charge.Currency, message.Charge.Amount),
-                    transactionType: message.Charge.TransactionType,
+                charges = message.Charges.ConvertAll(charge => new Transaction(
+                    id: charge.Id,
+                    amount: new Money(charge.Currency, charge.Amount),
+                    transactionType: charge.TransactionType,
                     isContra: message.IsContra,
                     timestamp: message.Timestamp,
                     sourceAccount: new TransactionAccountInfo()
@@ -80,12 +81,13 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
                     },
                     destAccount: new TransactionAccountInfo()
                     {
-                        AccountId = message.Charge.PayToAccount.Id,
-                        AccountSubjectId = message.Charge.PayToAccount.SubjectId
+                        AccountId = charge.PayToAccount.Id,
+                        AccountSubjectId = charge.PayToAccount.SubjectId
                     },
                     notes: "Transaction charges",
-                    charge: null
-                    );
+                    charges: null
+                    )
+                );
             }
             var transaction = new Transaction(
                 id: message.TransactionId,
@@ -104,7 +106,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
                     AccountSubjectId = message.DestAccount.SubjectId
                 },
                 notes: $"Transaction {message.TransactionType} from {message.SourceAccount.AccountNumber} to {message.DestAccount.AccountNumber}",
-                charge: charge
+                charges: charges
                 );
 
 
@@ -123,7 +125,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
 
         protected virtual async Task HandleInitiateCompleted(ConsumeContext<PostTransaction> context, Transaction transaction)
         {
-            var charge = transaction.Charges.FirstOrDefault();
+            var charges = transaction.Charges;
             var entry = transaction.GetSourceEntry();
 
             await context.Publish(new TransactionPostedToSource()
@@ -136,13 +138,13 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
                 IsContra = transaction.IsContra,
                 Timestamp = transaction.Timestamp,
                 TransactionId = transaction.Id,
-                ChargeInfo = charge == null ? null : new LinkedTransactionInfo()
+                Charges = charges.ConvertAll(charge => new LinkedTransactionInfo()
                 {
                     Amount = charge.Amount,
                     TransactionType = charge.TransactionType,
                     TransactionId = charge.Id,
-                    DestAccount = context.Message.Charge.PayToAccount
-                },
+                    DestAccount = context.Message.Charges.Find(c => c.Id == charge.Id).PayToAccount
+                }),
                 SourceBalanceAfter = new MoneyInfo
                 {
                     Value = entry.BalanceAfter.Value,
@@ -176,7 +178,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
                 {
                     Amount = c.Amount,
                     TransactionId = c.Id,
-                    DestAccount = context.Message.Charge.PayToAccount,
+                    DestAccount = context.Message.Charges.Find(c => c.Id == c.Id).PayToAccount,
                     TransactionType = c.TransactionType
                 })
             }).ConfigureAwait(false);
