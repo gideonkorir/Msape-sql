@@ -15,6 +15,7 @@ namespace Msape.BookKeeping.Data.EF
         public DbSet<Account> Accounts { get; set; }
         public DbSet<AccountSubject> Subjects { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<ChargeConfiguration> ChargeConfigurations { get; set; }
 
         public BookKeepingContext(DbContextOptions<BookKeepingContext> options)
             : base(options)
