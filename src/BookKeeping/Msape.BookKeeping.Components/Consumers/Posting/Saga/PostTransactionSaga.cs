@@ -2,6 +2,7 @@
 using Msape.BookKeeping.Data;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 
 namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
 {
@@ -27,8 +28,8 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
         //data for entries
         public SagaEntryData PostToDestData { get; set; }
         public SagaEntryData PostToSourceData { get; set; }
-        public SagaInstanceChargeInfo ChargeInfo { get; set; }
-        public SagaEntryData PostToChargeData { get; set; }
-        public SagaEntryData UndoPostToSourceData { get; set; }
+        public SagaEntryData CancelTxData { get; set; }
+        public List<SagaInstanceChargeInfo> Charges { get; set; } = new List<SagaInstanceChargeInfo>();
+        public List<ChargeSagaEntryData> ChargeEntries { get; set; } = new List<ChargeSagaEntryData>();
     }
 }

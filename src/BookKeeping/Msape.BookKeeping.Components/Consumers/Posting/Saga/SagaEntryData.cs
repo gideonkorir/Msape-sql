@@ -9,4 +9,11 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
         public DateTime Timestamp { get; set; }
         public DebitOrCreditFailReason? FailReason { get; set; }
     }
+
+    public class ChargeSagaEntryData
+    {
+        public MoneyInfo BalanceAfter { get; set; }
+        public DateTime Timestamp { get; set; }
+        public long ChargeId { get; set; }
+    }
 }

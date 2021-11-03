@@ -16,7 +16,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
         //states
         public State PostingToDestAccount { get; set; }
         public State Cancelling { get; set; }
-        public State PostingCharge { get; set; }
+        public State PostingCharges { get; set; }
 
         public PostTransactionStateMachine(PostTransactionStateMachineOptions sagaOptions)
         {
@@ -72,7 +72,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                             Timestamp = c.Data.Timestamp
                         };
                     })
-                    .IfElse(c => c.Instance.ChargeInfo is null,
+                    .IfElse(c => c.Instance.Charges is null || c.Instance.Charges.Count == 0,
                         ifContext =>
                         {
                             return ifContext.Finalize();
@@ -81,7 +81,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                         {
                             return elseContext
                                 .SendCreditCharge(sagaOptions)
-                                .TransitionTo(PostingCharge);
+                                .TransitionTo(PostingCharges);
                         }
                     ),
 
@@ -106,7 +106,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                 When(Cancelled)
                     .Then(c =>
                     {
-                        c.Instance.UndoPostToSourceData = new SagaEntryData()
+                        c.Instance.CancelTxData = new SagaEntryData()
                         {
                             BalanceAfter = c.Data.BalanceAfter,
                             Timestamp = c.Data.Timestamp
@@ -115,20 +115,29 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                     .Finalize()
                     );
 
-            During(PostingCharge,
+            During(PostingCharges,
                 Ignore(PostedToSource),
                 Ignore(PostedToDest),
                 When(ChargePosted)
-                    .Then(context =>
+                    .HandleChargePosted()
+                    .If(context => HasEntriesForAllCharges(context.Instance), binder =>
                     {
-                        context.Instance.PostToChargeData = new SagaEntryData()
-                        {
-                            BalanceAfter = context.Data.BalanceAfter,
-                            Timestamp = context.Data.Timestamp
-                        };
+                        return binder.Finalize();
                     })
-                    .Finalize()
-                    );
+                );
+        }
+
+        static bool HasEntriesForAllCharges(PostTransactionSaga saga)
+        {
+            if (saga.Charges.Count != saga.ChargeEntries.Count)
+                return false;
+            bool allPosted = true;
+            for (int i = 0; i < saga.Charges.Count && allPosted; i++)
+            {
+                var charge = saga.Charges[i];
+                allPosted &= saga.ChargeEntries.Exists(c => c.ChargeId == charge.ChargeId);
+            }
+            return allPosted;
         }
     }
 }

@@ -1,8 +1,12 @@
 ﻿using Automatonymous;
 using Automatonymous.Binders;
+using GreenPipes;
+using MassTransit;
 using MassTransit.Azure.ServiceBus.Core;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Threading.Tasks;
 
 namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
 {
@@ -26,7 +30,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                         BalanceAfter = context.Data.SourceBalanceAfter,
                         Timestamp = context.Data.Timestamp
                     };
-                    context.Instance.ChargeInfo = SagaInstanceChargeInfo.From(context.Data, context.Instance);
+                    context.Instance.Charges.Add(SagaInstanceChargeInfo.From(context.Data, context.Instance));
                 });
         }
         public static EventActivityBinder<PostTransactionSaga, TransactionPostedToSource> SendPostDest(this EventActivityBinder<PostTransactionSaga, TransactionPostedToSource> binder, PostTransactionStateMachineOptions sagaOptions)
@@ -64,22 +68,47 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
 
         public static EventActivityBinder<PostTransactionSaga, TransactionPostedToDest> SendCreditCharge(this EventActivityBinder<PostTransactionSaga, TransactionPostedToDest> binder, PostTransactionStateMachineOptions sagaOptions)
         {
-            return
-                binder.Send(
-                    destinationAddressProvider: context => sagaOptions.AccountTypeSendEndpoint(context.Instance.ChargeInfo.DestAccount.AccountType),
-                    messageFactory: context => new PostTransactionCharge()
+            return binder.ThenAsync(async context =>
+            {
+                var tasks = new List<Task>(context.Instance.Charges.Count);
+                foreach (var charge in context.Instance.Charges)
+                {
+                    var endpointUri = sagaOptions.AccountTypeSendEndpoint(charge.DestAccount.AccountType);
+                    var sendEndpoint = await context.GetSendEndpoint(endpointUri).ConfigureAwait(false);
+                    var sessionId = charge.DestAccount.AccountId.ToString(CultureInfo.InvariantCulture);
+                    var task = sendEndpoint.Send(new PostTransactionCharge()
                     {
                         PostingId = context.Instance.CorrelationId,
                         TransactionId = context.Instance.TransactionId,
-                        ChargeId = context.Instance.ChargeInfo.ChargeId,
+                        ChargeId = charge.ChargeId,
                         Timestamp = context.Instance.Timestamp
                     },
-                    contextCallback: (sagaContext, context) =>
+                    sendContext =>
                     {
-                        context.ResponseAddress ??= context.SourceAddress;
-                        context.SetSessionId(sagaContext.Instance.ChargeInfo.DestAccount.AccountId.ToString(CultureInfo.InvariantCulture));
+                        sendContext.ResponseAddress ??= sendContext.SourceAddress;
+                        sendContext.SetSessionId(sessionId);
                     }
-                );
+                    );
+                }
+            });
+        }
+
+        public static EventActivityBinder<PostTransactionSaga, TransactionChargePosted> HandleChargePosted(this EventActivityBinder<PostTransactionSaga, TransactionChargePosted> binder)
+        {
+            return
+            binder.Then(context =>
+            {
+                var postData = context.Instance.ChargeEntries.Find(c => c.ChargeId == context.Data.ChargeId);
+                if (postData == null)
+                {
+                    context.Instance.ChargeEntries.Add(new ChargeSagaEntryData()
+                    {
+                        ChargeId = context.Data.ChargeId,
+                        BalanceAfter = context.Data.BalanceAfter,
+                        Timestamp = context.Data.Timestamp
+                    });
+                }
+            });
         }
     }
 }
