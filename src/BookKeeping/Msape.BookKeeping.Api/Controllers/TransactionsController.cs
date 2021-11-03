@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Msape.BookKeeping.Api.Infra;
 using Msape.BookKeeping.Api.Models;
 using Msape.BookKeeping.Data;
@@ -6,6 +7,7 @@ using Msape.BookKeeping.Data.EF;
 using Msape.BookKeeping.InternalContracts;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Msape.BookKeeping.Api.Controllers
@@ -252,6 +254,20 @@ namespace Msape.BookKeeping.Api.Controllers
         [NonAction]
         private async Task<CacheableAccountSubject> GetSubjectAsync(string accountNumber, AccountType accountType)
             => await _subjectCache.GetSubjectAsync(accountNumber, accountType, HttpContext.RequestAborted).ConfigureAwait(false);
+
+        [NonAction]
+        private async Task<List<ChargeData>> GetChargeDataAsync(TransactionType transactionType, Money amount)
+        {
+            var now = DateTime.UtcNow;
+            var charges = await _bookKeepingContext.ChargeConfigurations
+                .Where(c => c.TransactionType == transactionType && c.Currency == amount.Currency)
+                .SelectMany(c => c.Data)
+                .Where(c => c.FromDate >= now && c.ToDate != null && c.MinAmount <= amount.Value && c.MaxAmount >= amount.Value)
+                .Where(c => c.ChargeAmount > 0M)
+                .ToListAsync(HttpContext.RequestAborted)
+                .ConfigureAwait(false);
+            return charges;
+        }
 
         [NonAction]
         private static List<T> ListOf<T>(params T[] values)
