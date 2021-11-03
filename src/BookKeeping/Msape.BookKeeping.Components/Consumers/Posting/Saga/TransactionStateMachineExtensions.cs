@@ -12,7 +12,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
 {
     public static class TransactionStateMachineExtensions
     {
-        public static EventActivityBinder<PostTransactionSaga, TransactionPostedToSource> CopyData(this EventActivityBinder<PostTransactionSaga, TransactionPostedToSource> binder)
+        public static EventActivityBinder<PostTransactionSaga, TransactionPostedToSource> CopyData(this EventActivityBinder<PostTransactionSaga, TransactionPostedToSource> binder, PostTransactionStateMachineOptions sagaOptions)
         {
             return binder
                 .Then(context =>
@@ -31,6 +31,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                         Timestamp = context.Data.Timestamp
                     };
                     context.Instance.Charges.Add(SagaInstanceChargeInfo.From(context.Data, context.Instance));
+                    context.Instance.Ttl = sagaOptions.TtlProvider(context.Data.TransactionType);
                 });
         }
         public static EventActivityBinder<PostTransactionSaga, TransactionPostedToSource> SendPostDest(this EventActivityBinder<PostTransactionSaga, TransactionPostedToSource> binder, PostTransactionStateMachineOptions sagaOptions)

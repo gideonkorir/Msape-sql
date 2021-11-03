@@ -14,7 +14,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
         [JsonProperty("_etag")]
         public string Etag { get; set; }
         [JsonProperty("_ttl")]
-        public string Ttl { get; set; }
+        public long Ttl { get; set; }
         public string Type { get; private set; } = "Sagas/Transactions";
         public string InstanceState { get; set; }
         //init data

@@ -54,7 +54,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
 
             Initially(
                 When(PostedToSource)
-                    .CopyData()
+                    .CopyData(sagaOptions)
                     .TransitionTo(PostingToDestAccount)
                     .SendPostDest(sagaOptions)
                     );
