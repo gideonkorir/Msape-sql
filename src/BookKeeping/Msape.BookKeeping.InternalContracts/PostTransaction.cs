@@ -1,5 +1,6 @@
 ﻿using Msape.BookKeeping.Data;
 using System;
+using System.Collections.Generic;
 
 namespace Msape.BookKeeping.InternalContracts
 {
@@ -15,7 +16,7 @@ namespace Msape.BookKeeping.InternalContracts
         public decimal Amount { get; init; }
         public int Currency { get; init; }
         public DateTime Timestamp { get; init; }
-        public Charge Charge { get; init; }
+        public List<Charge> Charges { get; init; } = new List<Charge>();
 
     }
 }

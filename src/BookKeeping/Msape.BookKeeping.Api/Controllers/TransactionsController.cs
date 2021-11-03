@@ -5,6 +5,7 @@ using Msape.BookKeeping.Data;
 using Msape.BookKeeping.Data.EF;
 using Msape.BookKeeping.InternalContracts;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Msape.BookKeeping.Api.Controllers
@@ -111,14 +112,16 @@ namespace Msape.BookKeeping.Api.Controllers
                 DestAccount = toSubject.ToAccountId(),
                 SourceAccount = fromSubject.ToAccountId(),
                 Currency = 0,
-                Charge = new Charge()
-                {
-                    Id = chargeId,
-                    Amount = 30,
-                    Currency = 0,
-                    TransactionType = TransactionType.TransactionCharge,
-                    PayToAccount = chargeSubject.ToAccountId()
-                }
+                Charges = ListOf(
+                    new Charge()
+                    {
+                        Id = chargeId,
+                        Amount = 30,
+                        Currency = 0,
+                        TransactionType = TransactionType.TransactionCharge,
+                        PayToAccount = chargeSubject.ToAccountId()
+                    }
+                    )
             },
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
@@ -146,14 +149,16 @@ namespace Msape.BookKeeping.Api.Controllers
                 TransactionType = TransactionType.CustomerWithdrawal,
                 DestAccount = agentSubject.ToAccountId(),
                 SourceAccount = customerSubject.ToAccountId(),
-                Charge = new Charge()
-                {
-                    Id = chargeId,
-                    Amount = Math.Ceiling(model.Amount * 0.01M),
-                    Currency = 0,
-                    TransactionType = TransactionType.TransactionCharge,
-                    PayToAccount = chargeSubject.ToAccountId()
-                },
+                Charges = ListOf(
+                    new Charge()
+                    {
+                        Id = chargeId,
+                        Amount = Math.Ceiling(model.Amount * 0.01M),
+                        Currency = 0,
+                        TransactionType = TransactionType.TransactionCharge,
+                        PayToAccount = chargeSubject.ToAccountId()
+                    }
+                    ),
                 Currency = 0
             },
             HttpContext.RequestAborted
@@ -181,7 +186,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 DestAccount = billSubject.ToAccountId(),
                 SourceAccount = customerSubject.ToAccountId(),
                 ExternalReference = model.AccountNumber,
-                Charge = null,
+                Charges = null,
                 Currency = 0
             },
             HttpContext.RequestAborted
@@ -208,7 +213,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 TransactionType = TransactionType.PaymentToTill,
                 DestAccount = tillSubject.ToAccountId(),
                 SourceAccount = customerSubject.ToAccountId(),
-                Charge = null,
+                Charges = null,
                 Currency = 0
             },
             HttpContext.RequestAborted
@@ -247,5 +252,9 @@ namespace Msape.BookKeeping.Api.Controllers
         [NonAction]
         private async Task<CacheableAccountSubject> GetSubjectAsync(string accountNumber, AccountType accountType)
             => await _subjectCache.GetSubjectAsync(accountNumber, accountType, HttpContext.RequestAborted).ConfigureAwait(false);
+
+        [NonAction]
+        private List<T> ListOf<T>(params T[] values)
+            => values == null ? new List<T>() : new List<T>(values);
     }
 }

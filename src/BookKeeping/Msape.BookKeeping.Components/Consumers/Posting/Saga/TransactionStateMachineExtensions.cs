@@ -30,7 +30,10 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
                         BalanceAfter = context.Data.SourceBalanceAfter,
                         Timestamp = context.Data.Timestamp
                     };
-                    context.Instance.Charges.Add(SagaInstanceChargeInfo.From(context.Data, context.Instance));
+                    if(context.Data.Charges != null)
+                    {
+                        context.Instance.Charges = context.Data.Charges.ConvertAll(c => SagaInstanceChargeInfo.From(c));
+                    }
                     context.Instance.Ttl = sagaOptions.TtlProvider(context.Data.TransactionType);
                 });
         }
