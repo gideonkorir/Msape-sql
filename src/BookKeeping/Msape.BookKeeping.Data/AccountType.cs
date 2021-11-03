@@ -6,6 +6,8 @@
         SystemAgentFloat = 1,
         SendMoneyCharge = 2,
         CustomerWithdrawalCharge = 3,
+        CashCollectionCharge = 4,
+        ServicePaymentCharge = 5,
 
         //other accounts begin over 64
         AgentFloat = 64,

@@ -13,6 +13,6 @@
         CustomerSendMoney = 18,
         CustomerWithdrawal = 19,
         PaymentToTill = 20,
-        BillPayment = 21
+        ServicePayment = 21
     }
 }

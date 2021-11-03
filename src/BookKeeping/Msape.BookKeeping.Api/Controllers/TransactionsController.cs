@@ -173,6 +173,13 @@ namespace Msape.BookKeeping.Api.Controllers
 
             //send message to queue
             var id = await NextTxIdAsync().ConfigureAwait(false);
+            var charges = await GetChargesAsync(new GetChargeData()
+            {
+                Amount = model.Amount.Value,
+                ChargeToSystemAccount = AccountType.CashCollectionCharge,
+                Currency = Currency.KES,
+                TransactionType = TransactionType.ServicePayment
+            }).ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
@@ -180,11 +187,11 @@ namespace Msape.BookKeeping.Api.Controllers
                 PostingId = ToGuid(id),
                 TransactionId = id,
                 Timestamp = DateTime.UtcNow,
-                TransactionType = TransactionType.BillPayment,
+                TransactionType = TransactionType.ServicePayment,
                 DestAccount = billSubject.ToAccountId(),
                 SourceAccount = customerSubject.ToAccountId(),
                 ExternalReference = model.AccountNumber,
-                Charges = null,
+                Charges = charges,
                 Currency = Currency.KES
             },
             HttpContext.RequestAborted
@@ -201,6 +208,13 @@ namespace Msape.BookKeeping.Api.Controllers
 
             //send message to queue
             var id = await NextTxIdAsync().ConfigureAwait(false);
+            var charges = await GetChargesAsync(new GetChargeData()
+            {
+                Amount = model.Amount,
+                ChargeToSystemAccount = AccountType.ServicePaymentCharge,
+                Currency = Currency.KES,
+                TransactionType = TransactionType.ServicePayment
+            }).ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
@@ -211,7 +225,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 TransactionType = TransactionType.PaymentToTill,
                 DestAccount = tillSubject.ToAccountId(),
                 SourceAccount = customerSubject.ToAccountId(),
-                Charges = null,
+                Charges = charges,
                 Currency = Currency.KES
             },
             HttpContext.RequestAborted
@@ -225,7 +239,7 @@ namespace Msape.BookKeeping.Api.Controllers
         {
             Span<byte> guidBytes = stackalloc byte[16];
             //copy ticks
-            CopyBytes(guidBytes, DateTime.UtcNow.Ticks);
+            CopyBytes(guidBytes, transactionId);
             CopyBytes(guidBytes[8..], transactionId);
             return new Guid(guidBytes);
 
