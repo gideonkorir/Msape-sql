@@ -25,6 +25,7 @@ namespace Msape.BookKeeping.Api
                 AccountType.CustomerWithdrawalCharge => "post-system-customer-withdrawal-charge",
                 AccountType.TillAccount => "post-till-account",
                 AccountType.CashCollectionAccount => "post-cash-collection",
+                AccountType.AgentFeeAccount => "post-agent-fee",
                 _ => throw new NotImplementedException($"The account type {type} has not been mapped")
             };
         }

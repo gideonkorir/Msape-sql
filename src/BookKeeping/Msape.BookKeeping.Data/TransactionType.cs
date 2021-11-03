@@ -7,11 +7,12 @@
         /// </summary>
         Unknown = 0,
         TransactionCharge = 1,
-        AgentFloatTopup = 2,
-        CustomerTopup = 3,
-        CustomerSendMoney = 4,
-        CustomerWithdrawal = 5,
-        PaymentToTill = 6,
-        BillPayment = 7
+        AgentFees = 2,
+        AgentFloatTopup = 16,
+        CustomerTopup = 17,
+        CustomerSendMoney = 18,
+        CustomerWithdrawal = 19,
+        PaymentToTill = 20,
+        BillPayment = 21
     }
 }

@@ -11,7 +11,8 @@
         AgentFloat = 64,
         CustomerAccount = 65,
         TillAccount = 66,
-        CashCollectionAccount = 67
+        CashCollectionAccount = 67,
+        AgentFeeAccount = 68
 
     }
 }

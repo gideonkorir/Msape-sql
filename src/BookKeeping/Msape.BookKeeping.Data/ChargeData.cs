@@ -4,11 +4,12 @@ namespace Msape.BookKeeping.Data
 {
     public enum ChargeType
     {
-        SystemCharge,
-        AgentFees
+        SystemCharge = 1,
+        AgentFees = 2
     }
     public class ChargeData
     {
+        public long Id { get; set; }
         public TransactionType ChargeTransactionType { get; set; }
         public DateTime FromDate { get; set; }
         public ChargeType ChargeType { get; set; }
