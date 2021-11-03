@@ -9,6 +9,7 @@ namespace Msape.BookKeeping.Data.EF.Configurations
         {
             builder.Property<TransactionType>(nameof(ChargeConfiguration.TransactionType)).HasColumnName("transaction_type");
             builder.Property<Currency>(nameof(ChargeConfiguration.Currency)).HasColumnName("currency");
+            builder.Property(c => c.ChargeTransactionType).HasColumnName("charge_transaction_type");
             builder.Property(c => c.ChargeType).IsRequired().HasColumnName("charge_type");
             builder.Property(c => c.FromDate).IsRequired()
                 .HasDefaultValueSql("getutcdate()")
@@ -20,9 +21,22 @@ namespace Msape.BookKeeping.Data.EF.Configurations
             builder.HasKey(
                 nameof(ChargeConfiguration.TransactionType),
                 nameof(ChargeConfiguration.Currency),
+                nameof(ChargeData.ChargeTransactionType),
                 nameof(ChargeData.FromDate)
                 );
             builder.HasQueryFilter(c => c.ToDate == null);
+
+            builder.HasIndex(
+                nameof(ChargeConfiguration.TransactionType),
+                nameof(ChargeConfiguration.Currency),
+                nameof(ChargeData.ChargeTransactionType),
+                nameof(ChargeData.ChargeType),
+                nameof(ChargeData.MinAmount),
+                nameof(ChargeData.MaxAmount))
+                .IsUnique()
+                .HasFilter("to_date is null")
+                .HasDatabaseName("UN_ChargeData_ChargeType_Amount");
+
             builder.ToTable("charge_configuration_data");
         }
     }

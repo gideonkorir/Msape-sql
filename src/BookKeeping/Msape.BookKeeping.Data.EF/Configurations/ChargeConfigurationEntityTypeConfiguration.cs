@@ -13,7 +13,8 @@ namespace Msape.BookKeeping.Data.EF.Configurations
             builder.HasMany(c => c.Data)
                 .WithOne()
                 .IsRequired()
-                .HasForeignKey("FK_ChargeData_Configuration")
+                .HasForeignKey(nameof(ChargeConfiguration.TransactionType), nameof(ChargeConfiguration.Currency))
+                .HasConstraintName("FK_ChargeData_Configuration")
                 .OnDelete(DeleteBehavior.Cascade);
             builder.ToTable("charge_configurations");
         }
