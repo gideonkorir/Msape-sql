@@ -10,6 +10,8 @@ namespace Msape.BookKeeping.Data
     public class ChargeData
     {
         public long Id { get; set; }
+        public TransactionType TransactionType { get; set; }
+        public Currency Currency { get; set; }
         public TransactionType ChargeTransactionType { get; set; }
         public DateTime FromDate { get; set; }
         public ChargeType ChargeType { get; set; }

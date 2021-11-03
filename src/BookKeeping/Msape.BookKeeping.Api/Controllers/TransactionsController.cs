@@ -316,11 +316,9 @@ namespace Msape.BookKeeping.Api.Controllers
         private async Task<List<ChargeData>> GetChargeDataAsync(TransactionType transactionType, Currency currency, decimal amount)
         {
             var now = DateTime.UtcNow;
-            var charges = await _bookKeepingContext.ChargeConfigurations
-                .Where(c => c.TransactionType == transactionType && c.Currency == currency)
-                .SelectMany(c => c.Data)
+            var charges = await _bookKeepingContext.ChargeData
+                .Where(c => c.TransactionType == transactionType && c.Currency == currency && c.ChargeAmount > 0)
                 .Where(c => c.FromDate <= now && c.ToDate == null && c.MinAmount <= amount && c.MaxAmount >= amount)
-                .Where(c => c.ChargeAmount > 0M)
                 .ToListAsync(HttpContext.RequestAborted)
                 .ConfigureAwait(false);
             return charges;

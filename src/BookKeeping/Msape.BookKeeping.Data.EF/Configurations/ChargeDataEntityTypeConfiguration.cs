@@ -10,8 +10,8 @@ namespace Msape.BookKeeping.Data.EF.Configurations
 
             builder.HasKey(c => c.Id);
             builder.Property(c => c.Id).HasColumnName("id");
-            builder.Property<TransactionType>(nameof(ChargeConfiguration.TransactionType)).HasColumnName("transaction_type");
-            builder.Property<Currency>(nameof(ChargeConfiguration.Currency)).HasColumnName("currency");
+            builder.Property(c => c.TransactionType).HasColumnName("transaction_type");
+            builder.Property(c => c.Currency).HasColumnName("currency");
             builder.Property(c => c.ChargeTransactionType).HasColumnName("charge_transaction_type");
             builder.Property(c => c.ChargeType).IsRequired().HasColumnName("charge_type");
             builder.Property(c => c.FromDate).IsRequired()
@@ -24,8 +24,8 @@ namespace Msape.BookKeeping.Data.EF.Configurations
             builder.HasQueryFilter(c => c.ToDate == null);
 
             builder.HasIndex(
-                nameof(ChargeConfiguration.TransactionType),
-                nameof(ChargeConfiguration.Currency),
+                nameof(ChargeData.TransactionType),
+                nameof(ChargeData.Currency),
                 nameof(ChargeData.ChargeTransactionType),
                 nameof(ChargeData.ChargeType),
                 nameof(ChargeData.MinAmount),
