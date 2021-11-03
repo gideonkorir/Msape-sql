@@ -6,12 +6,15 @@
         SystemAgentFloat = 1,
         SendMoneyCharge = 2,
         CustomerWithdrawalCharge = 3,
+        CashCollectionCharge = 4,
+        ServicePaymentCharge = 5,
 
         //other accounts begin over 64
         AgentFloat = 64,
         CustomerAccount = 65,
         TillAccount = 66,
-        CashCollectionAccount = 67
+        CashCollectionAccount = 67,
+        AgentFeeAccount = 68
 
     }
 }

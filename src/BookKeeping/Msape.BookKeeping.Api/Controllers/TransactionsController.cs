@@ -98,11 +98,17 @@ namespace Msape.BookKeeping.Api.Controllers
         {
             var fromSubject = await GetSubjectAsync(model.FromMsisdn, AccountType.CustomerAccount);
             var toSubject = await GetSubjectAsync(model.ToMsisdn, AccountType.CustomerAccount);
-            var chargeSubject = await GetSubjectAsync(SystemAcc, AccountType.SendMoneyCharge);
 
             //send message to queue
             var id = await NextTxIdAsync().ConfigureAwait(false);
-            var chargeId = await NextTxIdAsync().ConfigureAwait(false);
+            var charges = await GetChargesAsync(
+                new GetChargeData
+                {
+                    Amount = model.Amount,
+                    Currency = Currency.KES,
+                    ChargeToSystemAccount = AccountType.SendMoneyCharge,
+                    TransactionType = TransactionType.CustomerSendMoney
+                }).ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
@@ -114,16 +120,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 DestAccount = toSubject.ToAccountId(),
                 SourceAccount = fromSubject.ToAccountId(),
                 Currency = Currency.KES,
-                Charges = ListOf(
-                    new Charge()
-                    {
-                        Id = chargeId,
-                        Amount = 30,
-                        Currency = 0,
-                        TransactionType = TransactionType.TransactionCharge,
-                        PayToAccount = chargeSubject.ToAccountId()
-                    }
-                    )
+                Charges = charges
             },
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
@@ -136,11 +133,19 @@ namespace Msape.BookKeeping.Api.Controllers
         {
             var agentSubject = await GetSubjectAsync(model.AgentNumber, AccountType.AgentFloat).ConfigureAwait(false);
             var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
-            var chargeSubject = await GetSubjectAsync(SystemAcc, AccountType.CustomerWithdrawalCharge).ConfigureAwait(false);
 
             //send message to queue
             var id = await NextTxIdAsync().ConfigureAwait(false);
-            var chargeId = await NextTxIdAsync().ConfigureAwait(false);
+
+            var charges = await GetChargesAsync(
+                new GetChargeData
+                {
+                    TransactionType = TransactionType.CustomerSendMoney,
+                    Amount = model.Amount,
+                    Currency = Currency.KES,
+                    ChargeToSystemAccount = AccountType.CustomerWithdrawalCharge,
+                    AgentNumber = model.AgentNumber
+                }).ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
@@ -151,16 +156,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 TransactionType = TransactionType.CustomerWithdrawal,
                 DestAccount = agentSubject.ToAccountId(),
                 SourceAccount = customerSubject.ToAccountId(),
-                Charges = ListOf(
-                    new Charge()
-                    {
-                        Id = chargeId,
-                        Amount = Math.Ceiling(model.Amount * 0.01M),
-                        Currency = 0,
-                        TransactionType = TransactionType.TransactionCharge,
-                        PayToAccount = chargeSubject.ToAccountId()
-                    }
-                    ),
+                Charges = charges,
                 Currency = Currency.KES
             },
             HttpContext.RequestAborted
@@ -170,13 +166,20 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("paybill")]
-        public async Task<IActionResult> PayToMoneyCollectionAccount(PayBillApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> PayToCashCollection(PayBillApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
             var billSubject = await GetSubjectAsync(model.PayBillNumber, AccountType.CashCollectionAccount).ConfigureAwait(false);
             var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
 
             //send message to queue
             var id = await NextTxIdAsync().ConfigureAwait(false);
+            var charges = await GetChargesAsync(new GetChargeData()
+            {
+                Amount = model.Amount.Value,
+                ChargeToSystemAccount = AccountType.CashCollectionCharge,
+                Currency = Currency.KES,
+                TransactionType = TransactionType.ServicePayment
+            }).ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
@@ -184,11 +187,11 @@ namespace Msape.BookKeeping.Api.Controllers
                 PostingId = ToGuid(id),
                 TransactionId = id,
                 Timestamp = DateTime.UtcNow,
-                TransactionType = TransactionType.BillPayment,
+                TransactionType = TransactionType.ServicePayment,
                 DestAccount = billSubject.ToAccountId(),
                 SourceAccount = customerSubject.ToAccountId(),
                 ExternalReference = model.AccountNumber,
-                Charges = null,
+                Charges = charges,
                 Currency = Currency.KES
             },
             HttpContext.RequestAborted
@@ -198,13 +201,20 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("pay2till")]
-        public async Task<IActionResult> Pay2Till(TillPaymentApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> Pay4Service(TillPaymentApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
             var tillSubject = await GetSubjectAsync(model.TillNumber, AccountType.TillAccount).ConfigureAwait(false);
             var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
 
             //send message to queue
             var id = await NextTxIdAsync().ConfigureAwait(false);
+            var charges = await GetChargesAsync(new GetChargeData()
+            {
+                Amount = model.Amount,
+                ChargeToSystemAccount = AccountType.ServicePaymentCharge,
+                Currency = Currency.KES,
+                TransactionType = TransactionType.ServicePayment
+            }).ConfigureAwait(false);
 
             await commandSender.Send(new PostTransaction()
             {
@@ -215,7 +225,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 TransactionType = TransactionType.PaymentToTill,
                 DestAccount = tillSubject.ToAccountId(),
                 SourceAccount = customerSubject.ToAccountId(),
-                Charges = null,
+                Charges = charges,
                 Currency = Currency.KES
             },
             HttpContext.RequestAborted
@@ -229,7 +239,7 @@ namespace Msape.BookKeeping.Api.Controllers
         {
             Span<byte> guidBytes = stackalloc byte[16];
             //copy ticks
-            CopyBytes(guidBytes, DateTime.UtcNow.Ticks);
+            CopyBytes(guidBytes, transactionId);
             CopyBytes(guidBytes[8..], transactionId);
             return new Guid(guidBytes);
 
@@ -256,14 +266,73 @@ namespace Msape.BookKeeping.Api.Controllers
             => await _subjectCache.GetSubjectAsync(accountNumber, accountType, HttpContext.RequestAborted).ConfigureAwait(false);
 
         [NonAction]
-        private async Task<List<ChargeData>> GetChargeDataAsync(TransactionType transactionType, Money amount)
+        private async Task<List<Charge>> GetChargesAsync(GetChargeData getChargeData)
+        {
+            var chargeDatas = await GetChargeDataAsync(
+                getChargeData.TransactionType,
+                getChargeData.Currency,
+                getChargeData.Amount
+                ).ConfigureAwait(false);
+            if (chargeDatas.Count == 0)
+            {
+                return new List<Charge>();
+            }
+            //validate charges
+            ChargeDataUtil.Validate(getChargeData.TransactionType, getChargeData.Currency, chargeDatas);
+            
+            var charges = new List<Charge>(chargeDatas.Count);
+            foreach(var chargeData in chargeDatas)
+            {
+                var id = await NextTxIdAsync().ConfigureAwait(false);
+                var accountId = await GetAccountId(chargeData, getChargeData).ConfigureAwait(false);
+                charges.Add(new Charge
+                {
+                    Id = id,
+                    Amount = chargeData.ChargeAmount,
+                    Currency = getChargeData.Currency,
+                    TransactionType = ChargeDataUtil.ChargeTypeToTransactionType(chargeData.ChargeType),
+                    PayToAccount = accountId
+                });
+            }
+
+            return charges;
+
+            async Task<AccountId> GetAccountId(ChargeData chargeData, GetChargeData getChargeData)
+            {
+                AccountId accountId = null;
+                if (chargeData.ChargeType == ChargeType.AgentFees)
+                {
+                    var info = await _subjectCache.GetSubjectAsync(
+                        getChargeData.AgentNumber,
+                        AccountType.AgentFeeAccount,
+                        HttpContext.RequestAborted
+                        ).ConfigureAwait(false);
+                    accountId = info.ToAccountId();
+                }
+                else if (chargeData.ChargeType == ChargeType.SystemCharge)
+                {
+                    var info = await _subjectCache.GetSubjectAsync(
+                        SystemAcc,
+                        getChargeData.ChargeToSystemAccount.Value,
+                        HttpContext.RequestAborted
+                        ).ConfigureAwait(false);
+                    accountId = info.ToAccountId();
+                }
+                else
+                {
+                    throw new ArgumentException($"Unexpected charge type {chargeData.ChargeType}");
+                }
+                return accountId;
+            }
+        }
+
+        [NonAction]
+        private async Task<List<ChargeData>> GetChargeDataAsync(TransactionType transactionType, Currency currency, decimal amount)
         {
             var now = DateTime.UtcNow;
-            var charges = await _bookKeepingContext.ChargeConfigurations
-                .Where(c => c.TransactionType == transactionType && c.Currency == amount.Currency)
-                .SelectMany(c => c.Data)
-                .Where(c => c.FromDate >= now && c.ToDate != null && c.MinAmount <= amount.Value && c.MaxAmount >= amount.Value)
-                .Where(c => c.ChargeAmount > 0M)
+            var charges = await _bookKeepingContext.ChargeData
+                .Where(c => c.TransactionType == transactionType && c.Currency == currency && c.ChargeAmount > 0)
+                .Where(c => c.FromDate <= now && c.ToDate == null && c.MinAmount <= amount && c.MaxAmount >= amount)
                 .ToListAsync(HttpContext.RequestAborted)
                 .ConfigureAwait(false);
             return charges;
@@ -272,5 +341,14 @@ namespace Msape.BookKeeping.Api.Controllers
         [NonAction]
         private static List<T> ListOf<T>(params T[] values)
             => values == null ? new List<T>() : new List<T>(values);
+
+        private record GetChargeData
+        {
+            public TransactionType TransactionType { get; init; }
+            public decimal Amount { get; init; }
+            public Currency Currency { get; init; }
+            public AccountType? ChargeToSystemAccount { get; init; }
+            public string AgentNumber { get; init; }
+        }
     }
 }
