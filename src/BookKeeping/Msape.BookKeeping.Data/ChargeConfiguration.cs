@@ -15,9 +15,11 @@ namespace Msape.BookKeeping.Data
 
     public class ChargeData
     {
+        public TransactionType ChargeType { get; set; }
         public DateTime FromDate { get; set; }
         public DateTime? ToDate { get; set; }
         public decimal MinAmount { get; set; }
         public decimal MaxAmount { get; set; }
+        public decimal ChargeAmount { get; set; }
     }
 }
