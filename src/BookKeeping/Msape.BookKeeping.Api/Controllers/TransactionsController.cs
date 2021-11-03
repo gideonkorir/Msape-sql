@@ -166,7 +166,7 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("paybill")]
-        public async Task<IActionResult> PayToMoneyCollectionAccount(PayBillApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> PayToCashCollection(PayBillApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
             var billSubject = await GetSubjectAsync(model.PayBillNumber, AccountType.CashCollectionAccount).ConfigureAwait(false);
             var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
@@ -201,7 +201,7 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("pay2till")]
-        public async Task<IActionResult> Pay2Till(TillPaymentApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> Pay4Service(TillPaymentApiModel model, [FromServices] ISendTransactionCommand commandSender)
         {
             var tillSubject = await GetSubjectAsync(model.TillNumber, AccountType.TillAccount).ConfigureAwait(false);
             var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
