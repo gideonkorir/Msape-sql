@@ -57,7 +57,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 Timestamp = DateTime.UtcNow,
                 DestAccount = agentSubject.ToAccountId(),
                 SourceAccount = systemSubject.ToAccountId(),
-                Currency = 0
+                Currency = Currency.KES
             },
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
@@ -83,7 +83,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 TransactionType = TransactionType.CustomerTopup,
                 DestAccount = customerSubject.ToAccountId(),
                 SourceAccount = agentSubject.ToAccountId(),
-                Currency = 0
+                Currency = Currency.KES
             },
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
@@ -111,7 +111,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 Timestamp = DateTime.UtcNow,
                 DestAccount = toSubject.ToAccountId(),
                 SourceAccount = fromSubject.ToAccountId(),
-                Currency = 0,
+                Currency = Currency.KES,
                 Charges = ListOf(
                     new Charge()
                     {
@@ -159,7 +159,7 @@ namespace Msape.BookKeeping.Api.Controllers
                         PayToAccount = chargeSubject.ToAccountId()
                     }
                     ),
-                Currency = 0
+                Currency = Currency.KES
             },
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
@@ -187,7 +187,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 SourceAccount = customerSubject.ToAccountId(),
                 ExternalReference = model.AccountNumber,
                 Charges = null,
-                Currency = 0
+                Currency = Currency.KES
             },
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
@@ -214,7 +214,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 DestAccount = tillSubject.ToAccountId(),
                 SourceAccount = customerSubject.ToAccountId(),
                 Charges = null,
-                Currency = 0
+                Currency = Currency.KES
             },
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
@@ -254,7 +254,7 @@ namespace Msape.BookKeeping.Api.Controllers
             => await _subjectCache.GetSubjectAsync(accountNumber, accountType, HttpContext.RequestAborted).ConfigureAwait(false);
 
         [NonAction]
-        private List<T> ListOf<T>(params T[] values)
+        private static List<T> ListOf<T>(params T[] values)
             => values == null ? new List<T>() : new List<T>(values);
     }
 }

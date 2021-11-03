@@ -42,7 +42,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                 PostingId = Guid.NewGuid(),
                 TransactionId = 45,
                 IsContra = false,
-                Amount = new MoneyInfo() { Currency = 1, Value = 100_000 },
+                Amount = new MoneyInfo() { Currency = Data.Currency.KES, Value = 100_000 },
                 SourceAccount = new InternalContracts.AccountId()
                 {
                     Id = 5,
@@ -61,7 +61,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                 },
                 Timestamp = DateTime.UtcNow,
                 TransactionType = Data.TransactionType.CustomerSendMoney,
-                SourceBalanceAfter = new MoneyInfo() { Currency = 1, Value = 50_000 },
+                SourceBalanceAfter = new MoneyInfo() { Currency = Data.Currency.KES, Value = 50_000 },
                 Charges = null
             };
             await SendToSaga(message);
@@ -86,7 +86,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                 PostingId = Guid.NewGuid(),
                 TransactionId = 45,
                 IsContra = false,
-                Amount = new MoneyInfo() { Currency = 1, Value = 100_000 },
+                Amount = new MoneyInfo() { Currency = Data.Currency.KES, Value = 100_000 },
                 SourceAccount = new InternalContracts.AccountId()
                 {
                     Id = 5,
@@ -105,7 +105,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                 },
                 Timestamp = DateTime.UtcNow,
                 TransactionType = Data.TransactionType.CustomerSendMoney,
-                SourceBalanceAfter = new MoneyInfo() { Currency = 1, Value = 50_000 },
+                SourceBalanceAfter = new MoneyInfo() { Currency = Data.Currency.KES, Value = 50_000 },
                 Charges = null
             };
             await SendToSaga(message);

@@ -4,10 +4,10 @@ namespace Msape.BookKeeping.Data
 {
     public sealed record Money : IEquatable<Money>
     {
-        public int Currency { get; private set; }
+        public Currency Currency { get; private set; }
         public decimal Value { get; private set; }
 
-        public Money(int currency, decimal value)
+        public Money(Currency currency, decimal value)
         {
             Currency = currency;
             Value = value;
@@ -25,7 +25,7 @@ namespace Msape.BookKeeping.Data
             return new Money(Currency, Value - other.Value);
         }
 
-        private void CheckCurrency(int otherCurrency, string message)
+        private void CheckCurrency(Currency otherCurrency, string message)
         {
             if (Currency != otherCurrency)
                 throw new ArgumentException($"{message}. This currency {Currency}, Other currency {otherCurrency}");
@@ -37,7 +37,7 @@ namespace Msape.BookKeeping.Data
         public override int GetHashCode()
             => HashCode.Combine(Currency, Value);
 
-        public bool HasCurrency(int currency)
+        public bool HasCurrency(Currency currency)
             => Currency == currency;
 
         public bool HasCurrency(Money other)
@@ -47,7 +47,7 @@ namespace Msape.BookKeeping.Data
         public override string ToString()
             => $"{Currency}. {Value}";
 
-        public static Money Zero(int currency)
+        public static Money Zero(Currency currency)
             => new(currency, 0);
 
         public static Money Zero(Money source)

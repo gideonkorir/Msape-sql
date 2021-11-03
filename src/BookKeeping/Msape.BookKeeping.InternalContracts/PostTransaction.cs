@@ -14,7 +14,7 @@ namespace Msape.BookKeeping.InternalContracts
         public AccountId DestAccount { get; init; }
         public string ExternalReference { get; init; }
         public decimal Amount { get; init; }
-        public int Currency { get; init; }
+        public Currency Currency { get; init; }
         public DateTime Timestamp { get; init; }
         public List<Charge> Charges { get; init; } = new List<Charge>();
 
