@@ -70,6 +70,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             {
                 charges = message.Charges.ConvertAll(charge => new Transaction(
                     id: charge.Id,
+                    receiptNumber: charge.ReceiptNumber,
                     amount: new Money(charge.Currency, charge.Amount),
                     transactionType: charge.TransactionType,
                     isContra: message.IsContra,
@@ -91,6 +92,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             }
             var transaction = new Transaction(
                 id: message.TransactionId,
+                receiptNumber: message.ReceiptNumber,
                 amount: new Money(message.Currency, message.Amount),
                 transactionType: message.TransactionType,
                 isContra: message.IsContra,

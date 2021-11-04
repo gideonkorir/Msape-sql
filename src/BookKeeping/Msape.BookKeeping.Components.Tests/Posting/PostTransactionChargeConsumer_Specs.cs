@@ -60,6 +60,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             var tx = context.Transactions.Add(
                     new Data.Transaction(
                         id,
+                        "receipt",
                         new Data.Money(0, 100),
                         Data.TransactionType.CustomerWithdrawal,
                         false,
@@ -72,6 +73,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                             new Data.Transaction
                             (
                                 chargeId,
+                                "receipt",
                                 new Data.Money(0, 10),
                                 Data.TransactionType.TransactionCharge,
                                 false,

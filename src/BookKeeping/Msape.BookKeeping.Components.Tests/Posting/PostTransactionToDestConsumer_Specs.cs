@@ -37,6 +37,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             var tx = context.Transactions.Add(
                     new Data.Transaction(
                         id,
+                        "receipt",
                         new Data.Money(0, 100),
                         Data.TransactionType.AgentFloatTopup,
                         false,
@@ -117,6 +118,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             var tx = context.Transactions.Add(
                     new Data.Transaction(
                         id,
+                        "receit",
                         new Data.Money(0, 100),
                         Data.TransactionType.AgentFloatTopup,
                         false,
@@ -218,6 +220,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             var tx = context.Transactions.Add(
                     new Data.Transaction(
                         id,
+                        "receipt",
                         new Data.Money(0, 100),
                         Data.TransactionType.AgentFloatTopup,
                         false,
