@@ -20,7 +20,7 @@ namespace Msape.BookKeeping.Data.EF
         public BookKeepingContext(DbContextOptions<BookKeepingContext> options)
             : base(options)
         {
-            _txCache = new IdCache(this, _txIdSeq, valueCount: 10);
+            _txCache = new IdCache(this, _txIdSeq);
         }
 
         public async Task<ulong> NextTransactionIdAsync(CancellationToken cancellationToken)

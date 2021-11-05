@@ -8,16 +8,16 @@ namespace Msape.BookKeeping.Data.EF
     internal class IdCache
     {
         private readonly BookKeepingContext _bookKeepingContext;
-        private readonly List<ulong> _cache;
-        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-        private readonly string _sql, _sequenceName;
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
+        private readonly string _sql;
+        private readonly int _rangeSize;
+        private ulong _nextValue = 1, _maxValue = 0; //_nextValue is greater than _maxValue to cause us to load values from the db
 
-        public IdCache(BookKeepingContext bookKeepingContext, string sequenceName, int valueCount)
+        public IdCache(BookKeepingContext bookKeepingContext, string sequenceName)
         {
             _bookKeepingContext = bookKeepingContext;
-            _cache = new List<ulong>(valueCount);
-            _sequenceName = sequenceName;
             _sql = GetSql(sequenceName);
+            _rangeSize = 50; //start with 50 to improve on this later
         }
 
         public async Task<ulong> GetValueAsync(CancellationToken cancellationToken)
@@ -25,29 +25,25 @@ namespace Msape.BookKeeping.Data.EF
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                if(_cache.Count == 0)
+                if(_nextValue > _maxValue)
                 {
                     using var command = _bookKeepingContext.Database.GetDbConnection().CreateCommand();
                     command.CommandText = _sql;
                     var p = command.CreateParameter();
                     p.ParameterName = "@range_size";
-                    p.Value = _cache.Count;
+                    p.Value = _rangeSize;
                     p.DbType = System.Data.DbType.Int32;
-
                     command.Parameters.Add(p);
                     _bookKeepingContext.Database.OpenConnection();
                     using var result = command.ExecuteReader();
                     if (result.Read())
                     {
-                        var start = decimal.ToUInt64(result.GetDecimal(0));
-                        var end = decimal.ToUInt64(result.GetDecimal(1));
-                        for (; start <= end; start++)
-                            _cache.Add(start);
-
+                        _nextValue = decimal.ToUInt64(result.GetDecimal(0));
+                        _maxValue = decimal.ToUInt64(result.GetDecimal(1));
                     }
                 }
-                var value = _cache[^1];
-                _cache.RemoveAt(_cache.Count - 1);
+                var value = _nextValue;
+                _nextValue += 1;
                 return value;
             }
             finally
