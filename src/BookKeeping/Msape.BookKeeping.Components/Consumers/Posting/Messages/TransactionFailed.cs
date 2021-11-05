@@ -8,7 +8,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
     public record TransactionFailed
     {
         public Guid PostingId { get; init; }
-        public long TransactionId { get; init; }
+        public ulong TransactionId { get; init; }
         public DateTime Timestamp { get; init; }
         public TransactionType TransactionType { get; init; }
         public bool IsContra { get; init; }

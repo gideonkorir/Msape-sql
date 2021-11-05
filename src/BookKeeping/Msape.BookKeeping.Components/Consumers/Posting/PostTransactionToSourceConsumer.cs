@@ -115,7 +115,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             return transaction;
         }  
 
-        private async Task<Transaction> FindTransaction(long transactionId, CancellationToken cancellationToken)
+        private async Task<Transaction> FindTransaction(ulong transactionId, CancellationToken cancellationToken)
         {
             var transaction = await _bookeepingContext.Transactions
                 .Where(c => c.Id == transactionId)

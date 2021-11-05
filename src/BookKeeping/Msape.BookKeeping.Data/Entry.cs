@@ -4,7 +4,7 @@ namespace Msape.BookKeeping.Data
 {
     public record Entry
     {
-        public long TransactionId { get; init; }
+        public ulong TransactionId { get; init; }
         public long AccountId { get; init; }
         public EntryType EntryType { get; init; }
         public Money BalanceAfter { get; init; }

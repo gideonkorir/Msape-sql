@@ -12,7 +12,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
 {
     public class Transaction_Is_Posted_To_Dest : ConsumerTest<PostTransactionToDestConsumer>
     {
-        private readonly long id = DateTime.Now.Ticks;
+        private readonly ulong id = (ulong)DateTime.Now.Ticks;
 
         public Transaction_Is_Posted_To_Dest(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
@@ -93,7 +93,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
 
     public class Post_To_Dest_Is_Idempotent : ConsumerTest<PostTransactionToDestConsumer>
     {
-        private readonly long id = DateTime.Now.Ticks;
+        private readonly ulong id = (ulong)DateTime.Now.Ticks;
 
         public Post_To_Dest_Is_Idempotent(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
@@ -194,7 +194,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
 
     public class Post_To_Dest_Failure_Scenario : ConsumerTest<PostTransactionToDestConsumer>
     {
-        private readonly long id = DateTime.Now.Ticks;
+        private readonly ulong id = (ulong)DateTime.Now.Ticks;
 
         public Post_To_Dest_Failure_Scenario(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {

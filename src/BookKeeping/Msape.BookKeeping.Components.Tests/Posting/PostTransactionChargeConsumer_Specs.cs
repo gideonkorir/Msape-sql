@@ -12,8 +12,8 @@ namespace Msape.BookKeeping.Components.Tests.Posting
 {
     public class TransactionCharge_Is_Posted : ConsumerTest<PostTransactionChargeConsumer>
     {
-        private readonly long id = DateTime.Now.Ticks;
-        private readonly long chargeId = DateTime.Now.Ticks / 2;
+        private readonly ulong id = (ulong)DateTime.Now.Ticks;
+        private readonly ulong chargeId = (ulong)DateTime.Now.Ticks / 2;
 
         public TransactionCharge_Is_Posted(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {

@@ -14,7 +14,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
 {
     public class Consumer_Will_Cancel_Transaction : ConsumerTest<CancelTransactionConsumer>
     {
-        private readonly long id = DateTime.Now.Ticks;
+        private readonly ulong id = (ulong)DateTime.Now.Ticks;
 
         public Consumer_Will_Cancel_Transaction(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {

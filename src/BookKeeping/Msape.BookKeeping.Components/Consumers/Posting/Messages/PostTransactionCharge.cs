@@ -8,8 +8,8 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
     public record PostTransactionCharge
     {
         public Guid PostingId { get; init; }
-        public long ChargeId { get; init; }
-        public long TransactionId { get; init; }
+        public ulong ChargeId { get; init; }
+        public ulong TransactionId { get; init; }
         public DateTime Timestamp { get; init; }
     }
 

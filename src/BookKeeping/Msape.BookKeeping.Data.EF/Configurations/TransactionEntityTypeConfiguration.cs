@@ -78,6 +78,8 @@ namespace Msape.BookKeeping.Data.EF.Configurations
                 .IsUnique()
                 .HasDatabaseName("UN_Transactions_ReceiptNumber");
             builder.ToTable("transactions");
+            //id is ulong.maxValue
+            builder.HasCheckConstraint("CHK_Transactions_MaxValue", "id <= 18446744073709551615");
         }
     }
 }

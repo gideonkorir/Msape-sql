@@ -5,7 +5,7 @@ namespace Msape.BookKeeping.InternalContracts
 {
     public record Charge
     {
-        public long Id { get; init; }
+        public ulong Id { get; init; }
         public string ReceiptNumber { get; init; }
         public decimal Amount { get; init; }
         public Currency Currency { get; init; }

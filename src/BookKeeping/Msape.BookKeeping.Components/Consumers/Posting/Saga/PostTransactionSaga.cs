@@ -18,7 +18,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
         public string Type { get; private set; } = "Sagas/Transactions";
         public string InstanceState { get; set; }
         //init data
-        public long TransactionId { get; set; }
+        public ulong TransactionId { get; set; }
         public TransactionType TransactionType { get; set; }
         public bool IsContra { get; set; }
         public MoneyInfo Amount { get; set; }

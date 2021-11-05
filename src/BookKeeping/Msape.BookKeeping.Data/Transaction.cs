@@ -7,8 +7,8 @@ namespace Msape.BookKeeping.Data
 {
     public class Transaction
     {
-        public long Id { get; protected set; }
-        public long? ParentId { get; protected set; }
+        public ulong Id { get; protected set; }
+        public ulong? ParentId { get; protected set; }
         public string ReceiptNumber { get; protected set; }
         public Money Amount { get; protected set; }
         public DateTime Timestamp { get; protected set; }
@@ -29,7 +29,7 @@ namespace Msape.BookKeeping.Data
 
         protected Transaction() { }
 
-        public Transaction(long id, 
+        public Transaction(ulong id, 
             string receiptNumber,
             Money amount, TransactionType transactionType, bool isContra, DateTime timestamp,
             TransactionAccountInfo sourceAccount,

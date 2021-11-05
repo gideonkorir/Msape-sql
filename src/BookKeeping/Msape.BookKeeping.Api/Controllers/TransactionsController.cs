@@ -6,6 +6,7 @@ using Msape.BookKeeping.Data;
 using Msape.BookKeeping.Data.EF;
 using Msape.BookKeeping.InternalContracts;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -235,30 +236,17 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [NonAction]
-        public static Guid ToGuid(long transactionId)
+        public static Guid ToGuid(ulong transactionId)
         {
             Span<byte> guidBytes = stackalloc byte[16];
             //copy ticks
-            CopyBytes(guidBytes, transactionId);
-            CopyBytes(guidBytes[8..], transactionId);
+            BinaryPrimitives.WriteUInt64LittleEndian(guidBytes, transactionId);
+            BinaryPrimitives.WriteUInt64LittleEndian(guidBytes[8..], transactionId);
             return new Guid(guidBytes);
-
-
-            static void CopyBytes(Span<byte> dest, long value)
-            {
-                var bytes = BitConverter.GetBytes(value);
-                //use the little endian format always to reverse the bytes
-                if (!BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
-                //repeat the same process
-                bytes.CopyTo(dest);
-            }
         }
 
         [NonAction]
-        private async Task<long> NextTxIdAsync()
+        private async Task<ulong> NextTxIdAsync()
             => await _bookKeepingContext.NextTransactionIdAsync(HttpContext.RequestAborted).ConfigureAwait(false);
 
         [NonAction]
