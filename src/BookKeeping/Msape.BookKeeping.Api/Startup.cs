@@ -32,6 +32,11 @@ namespace Msape.BookKeeping.Api
         {
 
             services.AddControllers();
+            services.AddRouting(opts =>
+            {
+                opts.ConstraintMap.Add("ulong", typeof(UInt64RouteConstraint));
+                opts.ConstraintMap.Add("uint64", typeof(UInt64RouteConstraint));
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Msape.BookKeeping.Api", Version = "v1" });

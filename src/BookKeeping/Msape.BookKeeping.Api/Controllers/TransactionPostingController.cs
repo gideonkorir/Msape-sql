@@ -18,6 +18,7 @@ namespace Msape.BookKeeping.Api.Controllers
     public class TransactionPostingController : ControllerBase
     {
         private static readonly string SystemAcc = "SYSTEM";
+        private static readonly string GetByIdRoute = "GetTxById";
 
         private readonly BookKeepingContext _bookKeepingContext;
         private readonly ISubjectCache _subjectCache;
@@ -56,7 +57,7 @@ namespace Msape.BookKeeping.Api.Controllers
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
 
-            return Accepted(Url.ActionLink(action: "Get", controller: "transactions", values: new { id }));
+            return AcceptedAtRoute(GetByIdRoute, new { id });
         }
 
         [HttpPut("customertopup")]
@@ -82,8 +83,7 @@ namespace Msape.BookKeeping.Api.Controllers
             },
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
-
-            return Accepted(Url.ActionLink(action: "Get", controller: "transactions", values: new { id }));
+            return AcceptedAtRoute(GetByIdRoute, new { id });
         }
 
         [HttpPut("customersendmoney")]
@@ -119,7 +119,7 @@ namespace Msape.BookKeeping.Api.Controllers
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
 
-            return Accepted(Url.ActionLink(action: "GET", controller: "transactions", values: new { id }));
+            return AcceptedAtRoute(GetByIdRoute, new { id });
         }
 
         [HttpPut("customerwithdrawal")]
@@ -157,7 +157,8 @@ namespace Msape.BookKeeping.Api.Controllers
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
 
-            return Accepted(Url.ActionLink("Get", "transactions", values: new { id }));
+
+            return AcceptedAtRoute(GetByIdRoute, new { id });
         }
 
         [HttpPut("paybill")]
@@ -193,7 +194,7 @@ namespace Msape.BookKeeping.Api.Controllers
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
 
-            return Accepted(Url.ActionLink("Get", "transactions", values: new { id }));
+            return AcceptedAtRoute(GetByIdRoute, new { id });
         }
 
         [HttpPut("pay2till")]
@@ -228,7 +229,7 @@ namespace Msape.BookKeeping.Api.Controllers
             HttpContext.RequestAborted
             ).ConfigureAwait(false);
 
-            return Accepted(Url.ActionLink("Get", "transactions", values: new { id }));
+            return AcceptedAtRoute(GetByIdRoute, new { id });
         }
 
         [NonAction]

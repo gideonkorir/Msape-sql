@@ -18,7 +18,7 @@ namespace Msape.BookKeeping.Api.Controllers
             _bookKeepingContext = bookKeepingContext ?? throw new ArgumentNullException(nameof(bookKeepingContext));
         }
 
-        [HttpGet("{id:ulong}")]
+        [HttpGet("{id:ulong}", Name = "GetTxById")]
         public async Task<IActionResult> Get([FromRoute] ulong id)
         {
             var response = await _bookKeepingContext.Transactions
@@ -33,7 +33,7 @@ namespace Msape.BookKeeping.Api.Controllers
                 });
         }
 
-        [HttpGet("{receipt}")]
+        [HttpGet("{receipt}", Name = "GetTxByReceipt")]
         public async Task<IActionResult> Get([FromRoute] string receipt)
         {
             var response = await _bookKeepingContext.Transactions
