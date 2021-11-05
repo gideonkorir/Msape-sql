@@ -58,9 +58,7 @@ namespace Msape.BookKeeping.Api
             services
                 .AddDistributedMemoryCache()
                 .AddScoped<ISubjectCache, SubjectCache>()
-                .AddReceiptNumberConverter()
-                .AddOptions<TransactionIdToReceiptNumberConverterOptions>()
-                    .Bind(Configuration.GetSection("ReceiptNumberGenerator"));
+                .AddHexReceiptNumberConverter();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

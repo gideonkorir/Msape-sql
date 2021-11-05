@@ -15,45 +15,36 @@ namespace Msape.BookKeeping.Api.Controllers
 {
     [Route("api/transactions")]
     [ApiController]
-    public partial class TransactionsController : ControllerBase
+    public class TransactionPostingController : ControllerBase
     {
         private static readonly string SystemAcc = "SYSTEM";
 
         private readonly BookKeepingContext _bookKeepingContext;
         private readonly ISubjectCache _subjectCache;
+        private readonly ISendTransactionCommand _commandSender;
+        private readonly ITransactionIdToReceiptNumberConverter _receiptNumberConverter;
 
-        public TransactionsController(BookKeepingContext bookKeepingContext, ISubjectCache subjectCache)
+        public TransactionPostingController(BookKeepingContext bookKeepingContext, ISubjectCache subjectCache,
+            ISendTransactionCommand commandSender, ITransactionIdToReceiptNumberConverter receiptNumberConverter)
         {
             _bookKeepingContext = bookKeepingContext ?? throw new ArgumentNullException(nameof(bookKeepingContext));
             _subjectCache = subjectCache ?? throw new ArgumentNullException(nameof(subjectCache));
-        }
-
-        [HttpGet("{id:long}")]
-        public async Task<IActionResult> Get([FromRoute] long id)
-        {
-            var response = await _bookKeepingContext.Transactions
-                    .FindAsync(new object[] { id }, HttpContext.RequestAborted)
-                    .ConfigureAwait(false);
-
-            return response != null
-                ? Ok(TransactionApiModel.Create(response))
-                : NotFound(new
-                {
-                    ErrorMessage = $"Transaction with id {id} was not found"
-                });
+            _commandSender = commandSender ?? throw new ArgumentNullException(nameof(commandSender));
+            _receiptNumberConverter = receiptNumberConverter;
         }
 
         [HttpPut("agentfloattopup")]
-        public async Task<IActionResult> AgentFloatTopup(AgentFloatTopupApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> AgentFloatTopup(AgentFloatTopupApiModel model)
         {
             var agentSubject = await GetSubjectAsync(model.AgentNumber, AccountType.AgentFloat).ConfigureAwait(false);
             var systemSubject = await GetSubjectAsync(SystemAcc, AccountType.SystemAgentFloat).ConfigureAwait(false);
             //send message to queue
             var id = await NextTxIdAsync().ConfigureAwait(false);
 
-            await commandSender.Send(new PostTransaction()
+            await _commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
+                ReceiptNumber = _receiptNumberConverter.Convert(id),
                 PostingId = ToGuid(id),
                 TransactionId = id,
                 TransactionType = TransactionType.AgentFloatTopup,
@@ -69,7 +60,7 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("customertopup")]
-        public async Task<IActionResult> CustomerTopup(CustomerTopupApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> CustomerTopup(CustomerTopupApiModel model)
         {
             var agentSubject = await GetSubjectAsync(model.AgentNumber, AccountType.AgentFloat).ConfigureAwait(false);
             var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
@@ -77,10 +68,11 @@ namespace Msape.BookKeeping.Api.Controllers
             //send message to queue
             var id = await NextTxIdAsync().ConfigureAwait(false);
 
-            await commandSender.Send(new PostTransaction()
+            await _commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
                 PostingId = ToGuid(id),
+                ReceiptNumber = _receiptNumberConverter.Convert(id),
                 TransactionId = id,
                 Timestamp = DateTime.UtcNow,
                 TransactionType = TransactionType.CustomerTopup,
@@ -95,7 +87,7 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("customersendmoney")]
-        public async Task<IActionResult> CustomerSendMoney(CustomerSendMoneyApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> CustomerSendMoney(CustomerSendMoneyApiModel model)
         {
             var fromSubject = await GetSubjectAsync(model.FromMsisdn, AccountType.CustomerAccount);
             var toSubject = await GetSubjectAsync(model.ToMsisdn, AccountType.CustomerAccount);
@@ -111,11 +103,12 @@ namespace Msape.BookKeeping.Api.Controllers
                     TransactionType = TransactionType.CustomerSendMoney
                 }).ConfigureAwait(false);
 
-            await commandSender.Send(new PostTransaction()
+            await _commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
                 PostingId = ToGuid(id),
                 TransactionId = id,
+                ReceiptNumber = _receiptNumberConverter.Convert(id),
                 TransactionType = TransactionType.CustomerSendMoney,
                 Timestamp = DateTime.UtcNow,
                 DestAccount = toSubject.ToAccountId(),
@@ -130,7 +123,7 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("customerwithdrawal")]
-        public async Task<IActionResult> CustomerWithdrawal(CustomerWithdrawalApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> CustomerWithdrawal(CustomerWithdrawalApiModel model)
         {
             var agentSubject = await GetSubjectAsync(model.AgentNumber, AccountType.AgentFloat).ConfigureAwait(false);
             var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
@@ -148,11 +141,12 @@ namespace Msape.BookKeeping.Api.Controllers
                     AgentNumber = model.AgentNumber
                 }).ConfigureAwait(false);
 
-            await commandSender.Send(new PostTransaction()
+            await _commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
                 PostingId = ToGuid(id),
                 TransactionId = id,
+                ReceiptNumber = _receiptNumberConverter.Convert(id),
                 Timestamp = DateTime.UtcNow,
                 TransactionType = TransactionType.CustomerWithdrawal,
                 DestAccount = agentSubject.ToAccountId(),
@@ -167,7 +161,7 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("paybill")]
-        public async Task<IActionResult> PayToCashCollection(PayBillApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> PayToCashCollection(PayBillApiModel model)
         {
             var billSubject = await GetSubjectAsync(model.PayBillNumber, AccountType.CashCollectionAccount).ConfigureAwait(false);
             var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
@@ -182,11 +176,12 @@ namespace Msape.BookKeeping.Api.Controllers
                 TransactionType = TransactionType.ServicePayment
             }).ConfigureAwait(false);
 
-            await commandSender.Send(new PostTransaction()
+            await _commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount.Value,
                 PostingId = ToGuid(id),
                 TransactionId = id,
+                ReceiptNumber = _receiptNumberConverter.Convert(id),
                 Timestamp = DateTime.UtcNow,
                 TransactionType = TransactionType.ServicePayment,
                 DestAccount = billSubject.ToAccountId(),
@@ -202,7 +197,7 @@ namespace Msape.BookKeeping.Api.Controllers
         }
 
         [HttpPut("pay2till")]
-        public async Task<IActionResult> Pay4Service(TillPaymentApiModel model, [FromServices] ISendTransactionCommand commandSender)
+        public async Task<IActionResult> Pay4Service(TillPaymentApiModel model)
         {
             var tillSubject = await GetSubjectAsync(model.TillNumber, AccountType.TillAccount).ConfigureAwait(false);
             var customerSubject = await GetSubjectAsync(model.CustomerNumber, AccountType.CustomerAccount).ConfigureAwait(false);
@@ -217,11 +212,12 @@ namespace Msape.BookKeeping.Api.Controllers
                 TransactionType = TransactionType.ServicePayment
             }).ConfigureAwait(false);
 
-            await commandSender.Send(new PostTransaction()
+            await _commandSender.Send(new PostTransaction()
             {
                 Amount = model.Amount,
                 PostingId = ToGuid(id),
                 TransactionId = id,
+                ReceiptNumber = _receiptNumberConverter.Convert(id),
                 Timestamp = DateTime.UtcNow,
                 TransactionType = TransactionType.PaymentToTill,
                 DestAccount = tillSubject.ToAccountId(),
@@ -267,15 +263,16 @@ namespace Msape.BookKeeping.Api.Controllers
             }
             //validate charges
             ChargeDataUtil.Validate(getChargeData.TransactionType, getChargeData.Currency, chargeDatas);
-            
+
             var charges = new List<Charge>(chargeDatas.Count);
-            foreach(var chargeData in chargeDatas)
+            foreach (var chargeData in chargeDatas)
             {
                 var id = await NextTxIdAsync().ConfigureAwait(false);
                 var accountId = await GetAccountId(chargeData, getChargeData).ConfigureAwait(false);
                 charges.Add(new Charge
                 {
                     Id = id,
+                    ReceiptNumber = _receiptNumberConverter.Convert(id),
                     Amount = chargeData.ChargeAmount,
                     Currency = getChargeData.Currency,
                     TransactionType = ChargeDataUtil.ChargeTypeToTransactionType(chargeData.ChargeType),

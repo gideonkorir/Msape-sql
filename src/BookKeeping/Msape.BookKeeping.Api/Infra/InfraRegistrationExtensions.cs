@@ -14,10 +14,10 @@ namespace Msape.BookKeeping.Api
             return services;
         }
 
-        public static IServiceCollection AddReceiptNumberConverter(this IServiceCollection services)
+        public static IServiceCollection AddHexReceiptNumberConverter(this IServiceCollection services)
         {
             return
-                services.AddSingleton<ITransactionIdToReceiptNumberConverter, TransactionIdToReceiptNumberConverter>();
+                services.AddSingleton<ITransactionIdToReceiptNumberConverter, TransactionIdToHexReceiptNumberConverter>();
         }
 
         public static string ToQueueName(AccountType type)
