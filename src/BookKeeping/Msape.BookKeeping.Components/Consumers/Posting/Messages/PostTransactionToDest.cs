@@ -8,7 +8,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
     public record PostTransactionToDest
     {
         public Guid PostingId { get; init; }
-        public long TransactionId { get; init; }
+        public ulong TransactionId { get; init; }
         public DateTime Timestamp { get; init; }
     }
 

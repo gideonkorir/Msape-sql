@@ -14,6 +14,12 @@ namespace Msape.BookKeeping.Api
             return services;
         }
 
+        public static IServiceCollection AddHexReceiptNumberConverter(this IServiceCollection services)
+        {
+            return
+                services.AddSingleton<ITransactionIdToReceiptNumberConverter, TransactionIdToHexReceiptNumberConverter>();
+        }
+
         public static string ToQueueName(AccountType type)
         {
             return type switch
@@ -26,6 +32,8 @@ namespace Msape.BookKeeping.Api
                 AccountType.TillAccount => "post-till-account",
                 AccountType.CashCollectionAccount => "post-cash-collection",
                 AccountType.AgentFeeAccount => "post-agent-fee",
+                AccountType.CashCollectionCharge => "post-cash-collection-charge",
+                AccountType.ServicePaymentCharge => "post-service-payment-charge",
                 _ => throw new NotImplementedException($"The account type {type} has not been mapped")
             };
         }

@@ -4,7 +4,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
 {
     public class SagaInstanceChargeInfo
     {
-        public long ChargeId { get; set; }
+        public ulong ChargeId { get; set; }
         public MoneyInfo Amount { get; set; }
         public TransactionType TransactionType { get; set; }
         public SagaAccountInfo DestAccount { get; set; }

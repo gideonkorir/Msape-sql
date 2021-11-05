@@ -14,6 +14,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting.Saga
     {
         public MoneyInfo BalanceAfter { get; set; }
         public DateTime Timestamp { get; set; }
-        public long ChargeId { get; set; }
+        public ulong ChargeId { get; set; }
     }
 }

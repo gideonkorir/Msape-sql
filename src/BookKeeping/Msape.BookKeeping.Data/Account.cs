@@ -57,7 +57,7 @@ namespace Msape.BookKeeping.Data
             };
         }
 
-        public Entry Debit(long transactionId, Money amount)
+        public Entry Debit(ulong transactionId, Money amount)
         {
             var (canDebit, failReason) = CanDebit(amount);
             if(!canDebit)
@@ -68,7 +68,7 @@ namespace Msape.BookKeeping.Data
             return entry;
         }
 
-        public Entry Credit(long transactionId, Money amount)
+        public Entry Credit(ulong transactionId, Money amount)
         {
             var (canCredit, failReason) = CanCredit(amount);
             if (!canCredit)
@@ -79,7 +79,7 @@ namespace Msape.BookKeeping.Data
             return entry;
         }
 
-        Entry CreateEntry(long transactionId, Money amount, EntryType entryType)
+        Entry CreateEntry(ulong transactionId, Money amount, EntryType entryType)
         {
             bool isPlus = true;
             if(entryType == EntryType.Debit)

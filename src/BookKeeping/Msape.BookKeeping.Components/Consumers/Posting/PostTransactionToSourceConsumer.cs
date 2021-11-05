@@ -70,6 +70,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             {
                 charges = message.Charges.ConvertAll(charge => new Transaction(
                     id: charge.Id,
+                    receiptNumber: charge.ReceiptNumber,
                     amount: new Money(charge.Currency, charge.Amount),
                     transactionType: charge.TransactionType,
                     isContra: message.IsContra,
@@ -91,6 +92,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             }
             var transaction = new Transaction(
                 id: message.TransactionId,
+                receiptNumber: message.ReceiptNumber,
                 amount: new Money(message.Currency, message.Amount),
                 transactionType: message.TransactionType,
                 isContra: message.IsContra,
@@ -113,7 +115,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             return transaction;
         }  
 
-        private async Task<Transaction> FindTransaction(long transactionId, CancellationToken cancellationToken)
+        private async Task<Transaction> FindTransaction(ulong transactionId, CancellationToken cancellationToken)
         {
             var transaction = await _bookeepingContext.Transactions
                 .Where(c => c.Id == transactionId)

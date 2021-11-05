@@ -27,6 +27,8 @@ namespace Msape.BookKeeping.Service
             {
                 await context.Database.EnsureCreatedAsync(stoppingToken)
                     .ConfigureAwait(false);
+
+                await context.CreateCustomObjects(stoppingToken).ConfigureAwait(false);
             }
             catch(Exception ex)
             {

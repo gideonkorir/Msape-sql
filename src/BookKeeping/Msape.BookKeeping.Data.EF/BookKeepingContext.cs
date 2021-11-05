@@ -8,7 +8,7 @@ namespace Msape.BookKeeping.Data.EF
 {
     public class BookKeepingContext : DbContext
     {
-        private static readonly string _txIdSeq = "tx_id_generator";
+        private static readonly string _txIdSeq = "transaction_id_generator";
 
         private readonly IdCache _txCache;
 
@@ -20,10 +20,10 @@ namespace Msape.BookKeeping.Data.EF
         public BookKeepingContext(DbContextOptions<BookKeepingContext> options)
             : base(options)
         {
-            _txCache = new IdCache(this, _txIdSeq, valueCount: 10);
+            _txCache = new IdCache(this, _txIdSeq);
         }
 
-        public async Task<long> NextTransactionIdAsync(CancellationToken cancellationToken)
+        public async Task<ulong> NextTransactionIdAsync(CancellationToken cancellationToken)
         {
             var value = await _txCache.GetValueAsync(cancellationToken).ConfigureAwait(false);
             return value;
@@ -32,7 +32,26 @@ namespace Msape.BookKeeping.Data.EF
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(BookKeepingContext).Assembly);
-            modelBuilder.HasSequence(_txIdSeq);
         }
+
+        //Create custom objects when creating db. Don't call in user code.
+        //Anything added should be idempotent
+        public async Task CreateCustomObjects(CancellationToken cancellation)
+        {
+            if (Database.IsSqlServer())
+            {
+                var sql = @$"if not exists(select * from sys.sequences where name = '{_txIdSeq}')
+                begin
+	                create sequence {_txIdSeq} as decimal(20, 0)
+	                start with 1
+	                increment by 1
+	                minvalue 0
+	                maxvalue 18446744073709551615
+                end";
+
+                await Database.ExecuteSqlRawAsync(sql, cancellation).ConfigureAwait(false);
+            }
+        }
+
     }
 }

@@ -32,6 +32,11 @@ namespace Msape.BookKeeping.Api
         {
 
             services.AddControllers();
+            services.AddRouting(opts =>
+            {
+                opts.ConstraintMap.Add("ulong", typeof(UInt64RouteConstraint));
+                opts.ConstraintMap.Add("uint64", typeof(UInt64RouteConstraint));
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Msape.BookKeeping.Api", Version = "v1" });
@@ -57,7 +62,8 @@ namespace Msape.BookKeeping.Api
             });
             services
                 .AddDistributedMemoryCache()
-                .AddScoped<ISubjectCache, SubjectCache>();
+                .AddScoped<ISubjectCache, SubjectCache>()
+                .AddHexReceiptNumberConverter();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

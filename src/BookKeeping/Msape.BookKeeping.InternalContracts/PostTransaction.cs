@@ -7,7 +7,8 @@ namespace Msape.BookKeeping.InternalContracts
     public record PostTransaction
     {
         public Guid PostingId { get; init; }
-        public long TransactionId { get; init; }
+        public string ReceiptNumber { get; init; }
+        public ulong TransactionId { get; init; }
         public TransactionType TransactionType { get; init; }
         public bool IsContra { get; init; }
         public AccountId SourceAccount { get; init; }

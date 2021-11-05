@@ -6,7 +6,7 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
     public record PostTransactionToDestFailed
     {
         public Guid PostingId { get; init; }
-        public long TransactionId { get; init; }
+        public ulong TransactionId { get; init; }
         public long AccountId { get; init; }
         public MoneyInfo AccountBalance { get; init; }
         public DebitOrCreditFailReason FailReason { get; init; }

@@ -12,8 +12,8 @@ namespace Msape.BookKeeping.Components.Tests.Posting
 {
     public class TransactionCharge_Is_Posted : ConsumerTest<PostTransactionChargeConsumer>
     {
-        private readonly long id = DateTime.Now.Ticks;
-        private readonly long chargeId = DateTime.Now.Ticks / 2;
+        private readonly ulong id = (ulong)DateTime.Now.Ticks;
+        private readonly ulong chargeId = (ulong)DateTime.Now.Ticks / 2;
 
         public TransactionCharge_Is_Posted(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
@@ -60,6 +60,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
             var tx = context.Transactions.Add(
                     new Data.Transaction(
                         id,
+                        "receipt",
                         new Data.Money(0, 100),
                         Data.TransactionType.CustomerWithdrawal,
                         false,
@@ -72,6 +73,7 @@ namespace Msape.BookKeeping.Components.Tests.Posting
                             new Data.Transaction
                             (
                                 chargeId,
+                                "receipt",
                                 new Data.Money(0, 10),
                                 Data.TransactionType.TransactionCharge,
                                 false,
