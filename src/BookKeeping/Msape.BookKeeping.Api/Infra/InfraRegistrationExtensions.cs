@@ -17,7 +17,7 @@ namespace Msape.BookKeeping.Api
         public static IServiceCollection AddHexReceiptNumberConverter(this IServiceCollection services)
         {
             return
-                services.AddSingleton<ITransactionIdToReceiptNumberConverter, TransactionIdToHexReceiptNumberConverter>();
+                services.AddSingleton<ITransactionIdToReceiptNumberConverter, TransactionIdToModifiedBase32ReceiptNumberConverter>();
         }
 
         public static string ToQueueName(AccountType type)
