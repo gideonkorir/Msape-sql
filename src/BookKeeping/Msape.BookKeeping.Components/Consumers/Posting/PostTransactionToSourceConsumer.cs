@@ -45,6 +45,14 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
             }
             var transaction = MapToTransaction(context.Message, context.CancellationToken);
             _bookeepingContext.Transactions.Add(transaction);
+            if(context.Message.Metadata != null)
+            {
+                _bookeepingContext.Add(new TransactionMetadata()
+                {
+                    TransactionId = transaction.Id,
+                    Data = context.Message.Metadata
+                });
+            }
             var reference = transaction.SourceAccount;
             // try create the entry
             var account = await _bookeepingContext.Accounts
@@ -110,8 +118,6 @@ namespace Msape.BookKeeping.Components.Consumers.Posting
                 notes: $"Transaction {message.TransactionType} from {message.SourceAccount.AccountNumber} to {message.DestAccount.AccountNumber}",
                 charges: charges
                 );
-
-
             return transaction;
         }  
 
