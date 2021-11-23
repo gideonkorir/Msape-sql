@@ -18,6 +18,7 @@ namespace Msape.BookKeeping.InternalContracts
         public Currency Currency { get; init; }
         public DateTime Timestamp { get; init; }
         public List<Charge> Charges { get; init; } = new List<Charge>();
+        public TransactionMetadata.UserData Metadata { get; init; }
 
     }
 }
